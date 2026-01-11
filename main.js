@@ -53,7 +53,7 @@ player.position.set(0, 1, 0);
 scene.add(player);
 
 // ===============================
-// TREE
+// TREE (resource node)
 // ===============================
 const tree = new THREE.Mesh(
   new THREE.CylinderGeometry(0.5, 0.8, 5, 8),
@@ -61,6 +61,10 @@ const tree = new THREE.Mesh(
 );
 tree.position.set(5, 2.5, 0);
 scene.add(tree);
+
+// Tree state
+let treeHealth = 5;
+let canChop = true;
 
 // ===============================
 // INPUT HANDLING
@@ -99,24 +103,21 @@ window.addEventListener("mousemove", (e) => {
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // ===============================
-// CAMERA VARIABLES
+// CAMERA SETTINGS
 // ===============================
-let cameraYaw = 0;         // left-right
-let cameraPitch = 0.3;     // up-down
+let cameraYaw = 0;
+let cameraPitch = 0.3;
 let cameraDistance = 10;
 const minZoom = 4;
 const maxZoom = 20;
-const minPitch = 0.1;         // ~5 degrees
-const maxPitch = Math.PI / 2 - 0.2; // ~80 degrees
+const minPitch = 0.1;
+const maxPitch = Math.PI / 2 - 0.2;
 
 window.addEventListener("wheel", (e) => {
   cameraDistance += e.deltaY * 0.01;
   cameraDistance = Math.max(minZoom, Math.min(maxZoom, cameraDistance));
 });
 
-// ===============================
-// UPDATE CAMERA POSITION
-// ===============================
 function updateCamera() {
   if (isLeftMouseDown || isRightMouseDown) {
     cameraYaw -= mouseDeltaX * 0.002;
@@ -127,7 +128,6 @@ function updateCamera() {
   mouseDeltaX = 0;
   mouseDeltaY = 0;
 
-  // Convert spherical coordinates to Cartesian
   const x = player.position.x + cameraDistance * Math.sin(cameraPitch) * Math.sin(cameraYaw);
   const y = player.position.y + cameraDistance * Math.cos(cameraPitch);
   const z = player.position.z + cameraDistance * Math.sin(cameraPitch) * Math.cos(cameraYaw);
@@ -159,19 +159,37 @@ function handleMovement() {
 }
 
 // ===============================
-// INTERACTION
+// INTERACTION / CHOPPING
 // ===============================
 function checkInteraction() {
-  const dist = player.position.distanceTo(tree.position);
-  const interactionRange = 2.5;
+  if (!tree || treeHealth <= 0) return;
 
-  if (dist <= interactionRange) {
-    console.log("🪓 Chopping tree...");
+  const dist = player.position.distanceTo(tree.position);
+  const range = 2.5;
+
+  if (dist <= range && canChop) {
+    chopTree();
   }
 }
 
+function chopTree() {
+  treeHealth--;
+  canChop = false;
+
+  console.log("🪓 Chopped tree! Remaining HP:", treeHealth);
+
+  if (treeHealth <= 0) {
+    scene.remove(tree);
+    console.log("🌲 Tree destroyed! +1 Wood");
+  }
+
+  setTimeout(() => {
+    canChop = true;
+  }, 1000); // 1 second cooldown
+}
+
 // ===============================
-// MAIN LOOP
+// ANIMATE LOOP
 // ===============================
 function animate() {
   requestAnimationFrame(animate);

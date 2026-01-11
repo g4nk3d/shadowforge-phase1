@@ -33,11 +33,11 @@
       top: 100px;
       left: 50%;
       transform: translateX(-50%);
-      width: 240px;
-      background: rgba(0, 0, 0, 0.8);
+      width: 250px;
+      background: rgba(0, 0, 0, 0.85);
       color: white;
       padding: 10px;
-      border: 1px solid #888;
+      border: 1px solid #aaa;
       display: none;
       z-index: 20;
     }
@@ -45,13 +45,28 @@
     #craftingMenu h3,
     #buildingMenu h3,
     #inventoryMenu h3 {
-      margin-top: 0;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       cursor: move;
     }
 
+    .close-btn {
+      background: #aa4444;
+      border: none;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      padding: 2px 8px;
+      cursor: pointer;
+    }
+
     button {
-      margin-top: 5px;
-      margin-right: 5px;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      padding: 4px 8px;
     }
 
     #craftingPrompt,
@@ -92,15 +107,6 @@
     ul {
       padding-left: 15px;
     }
-
-    .close-btn {
-      float: right;
-      background: #aa4444;
-      border: none;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -110,7 +116,10 @@
 
   <!-- Crafting Menu -->
   <div id="craftingMenu">
-    <h3>Crafting <button class="close-btn" onclick="closeUI('craftingMenu')">X</button></h3>
+    <h3>
+      Crafting
+      <button class="close-btn" onclick="closeUI('craftingMenu')">X</button>
+    </h3>
     <button onclick="craftItem('Torch', 2)">Craft Torch (2 Wood)</button><br />
     <button onclick="craftItem('Wall', 3)">Craft Wall (3 Wood)</button>
     <div id="craftingMessage"></div>
@@ -118,19 +127,26 @@
 
   <!-- Building Menu -->
   <div id="buildingMenu">
-    <h3>Building <button class="close-btn" onclick="closeUI('buildingMenu')">X</button></h3>
+    <h3>
+      Building
+      <button class="close-btn" onclick="closeUI('buildingMenu')">X</button>
+    </h3>
     <button onclick="startBuilding('Wall')">Place Wall</button>
   </div>
 
   <!-- Inventory Menu -->
   <div id="inventoryMenu">
-    <h3>Inventory <button class="close-btn" onclick="closeUI('inventoryMenu')">X</button></h3>
+    <h3>
+      Inventory
+      <button class="close-btn" onclick="closeUI('inventoryMenu')">X</button>
+    </h3>
     <ul id="inventoryList"></ul>
   </div>
 
   <div id="craftingPrompt">Press E to craft</div>
   <div id="placementPrompt">Click to place, Right click to cancel</div>
 
+  <!-- Toolbar -->
   <div id="toolbar">
     <div class="slot">1</div>
     <div class="slot">2</div>
@@ -146,6 +162,7 @@
     <div class="slot">=</div>
   </div>
 
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
   <script src="draggable.js"></script>
   <script src="main.js"></script>

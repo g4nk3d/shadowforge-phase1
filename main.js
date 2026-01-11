@@ -1,20 +1,15 @@
 // === SCENE SETUP ===
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb); // Blue sky
+scene.background = new THREE.Color(0x87ceeb); // Sky
 
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 5, 10);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-window.addEventListener("resize", () => {
+window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -23,7 +18,6 @@ window.addEventListener("resize", () => {
 // === LIGHTING ===
 const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
 scene.add(ambientLight);
-
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
 directionalLight.position.set(5, 10, 7);
 scene.add(directionalLight);
@@ -31,10 +25,9 @@ scene.add(directionalLight);
 // === GROUND ===
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshStandardMaterial({ color: 0x228B22 }) // Green
+  new THREE.MeshStandardMaterial({ color: 0x228B22 }) // Grass green
 );
 ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
 scene.add(ground);
 
 // === PLAYER ===
@@ -47,6 +40,8 @@ scene.add(player);
 
 // === UI ===
 let woodCount = 0;
+const inventory = [];
+
 function updateUI() {
   const ui = document.getElementById("inventoryUI");
   if (ui) ui.textContent = `Wood: ${woodCount}`;
@@ -80,34 +75,32 @@ function createTree(x, z) {
 
 function spawnTrees() {
   const positions = [
-    [5, 0],
-    [-5, 5],
-    [8, -3],
-    [-8, -6],
-    [0, -8]
+    [5, 0], [-5, 5], [8, -3], [-8, -6], [0, -8]
   ];
   positions.forEach(([x, z]) => createTree(x, z));
 }
-
 spawnTrees();
 
-// === CRAFTING STATION ===
+// === WORKBENCH ===
 const workbench = new THREE.Mesh(
   new THREE.BoxGeometry(2, 1, 1),
-  new THREE.MeshStandardMaterial({ color: 0xffcc66 }) // bright color
+  new THREE.MeshStandardMaterial({ color: 0xffcc66 })
 );
-workbench.position.set(0, 0.5, 1); // spawn right in front of player
+workbench.position.set(0, 0.5, 1);
 scene.add(workbench);
 
+// === CRAFTING UI ===
 let nearWorkbench = false;
 const craftingPrompt = document.getElementById("craftingPrompt");
 const craftingMenu = document.getElementById("craftingMenu");
+const craftingMessage = document.getElementById("craftingMessage");
 
 function openCraftingMenu() {
   if (craftingMenu) craftingMenu.style.display = "block";
 }
 function closeCraftingMenu() {
   if (craftingMenu) craftingMenu.style.display = "none";
+  if (craftingMessage) craftingMessage.textContent = "";
 }
 
 window.addEventListener("keydown", (e) => {
@@ -116,7 +109,21 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-// === INPUT ===
+// === CRAFTING LOGIC ===
+function craftItem(item, cost) {
+  if (woodCount >= cost) {
+    woodCount -= cost;
+    inventory.push(item);
+    updateUI();
+    craftingMessage.textContent = `${item} crafted!`;
+    craftingMessage.style.color = "#aaffaa";
+  } else {
+    craftingMessage.textContent = `Not enough wood to craft ${item}`;
+    craftingMessage.style.color = "#ff9999";
+  }
+}
+
+// === INPUT HANDLING ===
 const keys = {};
 let isLeftMouseDown = false;
 let isRightMouseDown = false;
@@ -134,14 +141,12 @@ window.addEventListener("mouseup", e => {
   if (e.button === 0) isLeftMouseDown = false;
   if (e.button === 2) isRightMouseDown = false;
 });
-
 window.addEventListener("mousemove", e => {
   if (isLeftMouseDown || isRightMouseDown) {
     mouseDX = e.movementX;
     mouseDY = e.movementY;
   }
 });
-
 window.addEventListener("contextmenu", e => e.preventDefault());
 
 window.addEventListener("wheel", e => {
@@ -179,6 +184,7 @@ function updateCamera() {
     player.rotation.y = camYaw;
   }
 }
+
 // === COLLISION ===
 function willCollide(nextPos) {
   const playerBox = new THREE.Box3().setFromCenterAndSize(
@@ -191,7 +197,6 @@ function willCollide(nextPos) {
       return true;
     }
   }
-
   return false;
 }
 
@@ -232,7 +237,6 @@ function handleTreeInteraction(delta) {
         if (!solidBoxes.includes(tree.box)) {
           solidBoxes.push(tree.box);
         }
-        console.log("🌱 Tree respawned");
       }
       continue;
     }
@@ -242,19 +246,14 @@ function handleTreeInteraction(delta) {
       tree.health--;
       canChop = false;
 
-      console.log(`🪓 Tree hit! HP: ${tree.health}`);
-
       if (tree.health <= 0) {
         tree.destroyed = true;
         tree.respawnTimer = 20;
         tree.mesh.visible = false;
-
         const i = solidBoxes.indexOf(tree.box);
         if (i !== -1) solidBoxes.splice(i, 1);
-
         woodCount++;
         updateUI();
-        console.log("🌲 Tree destroyed! +1 Wood");
       }
 
       setTimeout(() => canChop = true, CHOP_COOLDOWN);
@@ -262,7 +261,7 @@ function handleTreeInteraction(delta) {
   }
 }
 
-// === CRAFTING STATION LOGIC ===
+// === WORKBENCH PROXIMITY ===
 function checkWorkbenchProximity() {
   const dist = player.position.distanceTo(workbench.position);
   nearWorkbench = dist <= 2.5;
@@ -275,7 +274,6 @@ function checkWorkbenchProximity() {
 
 // === ANIMATION LOOP ===
 let lastTime = performance.now();
-
 function animate() {
   requestAnimationFrame(animate);
 
@@ -299,4 +297,3 @@ function animate() {
 
 updateUI();
 animate();
-

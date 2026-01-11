@@ -54,7 +54,7 @@ player.position.set(0, 1, 0);
 scene.add(player);
 
 // ===============================
-// INTERACTABLE TREE
+// TREE (Interactable Object)
 // ===============================
 const treeGeometry = new THREE.CylinderGeometry(0.5, 0.8, 5, 8);
 const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
@@ -63,43 +63,90 @@ tree.position.set(5, 2.5, 0);
 scene.add(tree);
 
 // ===============================
-// INPUT HANDLING (WASD)
+// INPUT HANDLING (WASD + Mouse)
 // ===============================
 const keys = {};
+let isRightMouseDown = false;
+let isLeftMouseDown = false;
+let mouseDeltaX = 0;
 
-window.addEventListener("keydown", (event) => {
-  keys[event.key.toLowerCase()] = true;
+window.addEventListener("keydown", (e) => {
+  keys[e.key.toLowerCase()] = true;
 });
 
-window.addEventListener("keyup", (event) => {
-  keys[event.key.toLowerCase()] = false;
+window.addEventListener("keyup", (e) => {
+  keys[e.key.toLowerCase()] = false;
 });
+
+window.addEventListener("mousedown", (e) => {
+  if (e.button === 2) isRightMouseDown = true;
+  if (e.button === 0) isLeftMouseDown = true;
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (e.button === 2) isRightMouseDown = false;
+  if (e.button === 0) isLeftMouseDown = false;
+});
+
+window.addEventListener("mousemove", (e) => {
+  if (isRightMouseDown || isLeftMouseDown) {
+    mouseDeltaX = e.movementX;
+  }
+});
+
+// Prevent context menu on right-click
+window.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // ===============================
 // PLAYER MOVEMENT
 // ===============================
 function handlePlayerMovement() {
   const speed = 0.1;
+  const direction = new THREE.Vector3();
 
-  if (keys["w"]) player.position.z -= speed;
-  if (keys["s"]) player.position.z += speed;
-  if (keys["a"]) player.position.x -= speed;
-  if (keys["d"]) player.position.x += speed;
+  if (keys["w"]) direction.z -= 1;
+  if (keys["s"]) direction.z += 1;
+  if (keys["a"]) direction.x -= 1;
+  if (keys["d"]) direction.x += 1;
+
+  direction.normalize();
+
+  // Move based on player's rotation
+  const move = direction.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+  player.position.add(move.multiplyScalar(speed));
 }
 
 // ===============================
-// CAMERA FOLLOW (GAME STYLE)
+// CAMERA ROTATION AROUND PLAYER
 // ===============================
+let cameraAngle = 0;
+
 function updateCameraFollow() {
-  const offset = new THREE.Vector3(0, 5, 10);
-  const targetPosition = player.position.clone().add(offset);
+  // Rotate camera around player when mouse is held
+  if (isRightMouseDown || isLeftMouseDown) {
+    cameraAngle -= mouseDeltaX * 0.002; // rotation sensitivity
+  }
 
-  camera.position.lerp(targetPosition, 0.1);
+  mouseDeltaX = 0; // reset after applying
+
+  const radius = 10;
+  const offsetY = 5;
+
+  const cameraX = player.position.x + radius * Math.sin(cameraAngle);
+  const cameraZ = player.position.z + radius * Math.cos(cameraAngle);
+  const cameraY = player.position.y + offsetY;
+
+  camera.position.set(cameraX, cameraY, cameraZ);
   camera.lookAt(player.position);
+
+  // If left mouse is held, rotate the player to face camera direction
+  if (isLeftMouseDown) {
+    player.rotation.y = cameraAngle;
+  }
 }
 
 // ===============================
-// INTERACTION CHECK (TREE)
+// INTERACTION LOGIC (TREE)
 // ===============================
 function checkInteraction() {
   const distance = player.position.distanceTo(tree.position);
@@ -111,7 +158,7 @@ function checkInteraction() {
 }
 
 // ===============================
-// ANIMATION LOOP
+// MAIN LOOP
 // ===============================
 function animate() {
   requestAnimationFrame(animate);

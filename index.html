@@ -29,6 +29,7 @@
       padding: 8px 12px;
       border-radius: 4px;
       z-index: 10;
+      pointer-events: none;
     }
 
     #craftingPrompt {
@@ -44,6 +45,7 @@
       border-radius: 4px;
       display: none;
       z-index: 10;
+      pointer-events: none;
     }
 
     #craftingMenu {
@@ -61,6 +63,7 @@
       z-index: 20;
       width: 300px;
       text-align: center;
+      pointer-events: auto;
     }
 
     #craftingHeader {
@@ -114,32 +117,35 @@
   <script src="main.js"></script>
 
   <script>
-    // === Drag logic for crafting menu ===
-    const dragTarget = document.getElementById("craftingMenu");
-    const dragHeader = document.getElementById("craftingHeader");
+    // === DRAG LOGIC (Separate and DOM-Ready) ===
+    window.addEventListener('DOMContentLoaded', () => {
+      const dragTarget = document.getElementById("craftingMenu");
+      const dragHeader = document.getElementById("craftingHeader");
 
-    let isDragging = false;
-    let offsetX = 0;
-    let offsetY = 0;
+      let isDragging = false;
+      let offsetX = 0;
+      let offsetY = 0;
 
-    dragHeader.addEventListener("mousedown", (e) => {
-      isDragging = true;
-      offsetX = e.clientX - dragTarget.offsetLeft;
-      offsetY = e.clientY - dragTarget.offsetTop;
-      document.body.style.userSelect = "none";
-    });
+      dragHeader.addEventListener("mousedown", (e) => {
+        e.preventDefault(); // prevent canvas grabbing
+        isDragging = true;
+        offsetX = e.clientX - dragTarget.offsetLeft;
+        offsetY = e.clientY - dragTarget.offsetTop;
+        document.body.style.userSelect = "none";
+      });
 
-    document.addEventListener("mouseup", () => {
-      isDragging = false;
-      document.body.style.userSelect = "auto";
-    });
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+        document.body.style.userSelect = "auto";
+      });
 
-    document.addEventListener("mousemove", (e) => {
-      if (isDragging) {
-        dragTarget.style.left = e.clientX - offsetX + "px";
-        dragTarget.style.top = e.clientY - offsetY + "px";
-        dragTarget.style.transform = "none"; // disables center alignment when dragging
-      }
+      document.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+          dragTarget.style.left = `${e.clientX - offsetX}px`;
+          dragTarget.style.top = `${e.clientY - offsetY}px`;
+          dragTarget.style.transform = "none"; // disables centering
+        }
+      });
     });
   </script>
 </body>

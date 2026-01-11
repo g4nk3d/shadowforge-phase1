@@ -13,9 +13,15 @@
 
   <!-- No canvas needed in HTML — Three.js will create it -->
 
-  <!-- Load scripts in the correct order -->
-  <script src="three.min.js"></script>
-  <script src="OrbitControls.js"></script>
-  <script src="main.js"></script>
+ <!-- Load Three.js -->
+<script src="three.min.js"></script>
+
+<!-- Load OrbitControls.js BEFORE main.js -->
+<script src="OrbitControls.js"></script>
+
+<!-- Load your main script LAST -->
+<script src="main.js"></script>
+
 </body>
 </html>
+

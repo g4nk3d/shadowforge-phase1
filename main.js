@@ -18,7 +18,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Handle resize
+// Handle window resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -28,42 +28,42 @@ window.addEventListener("resize", () => {
 // ===============================
 // LIGHTING
 // ===============================
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(10, 20, 10);
-scene.add(directionalLight);
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(10, 20, 10);
+scene.add(light);
 
-const ambientLight = new THREE.AmbientLight(0x404040);
-scene.add(ambientLight);
+const ambient = new THREE.AmbientLight(0x404040);
+scene.add(ambient);
 
 // ===============================
-// GROUND / TERRAIN
+// GROUND
 // ===============================
-const groundGeometry = new THREE.PlaneGeometry(100, 100);
-const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x444444 });
-const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+const groundGeo = new THREE.PlaneGeometry(100, 100);
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
 // ===============================
 // PLAYER
 // ===============================
-const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
-const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x8888ff });
-const player = new THREE.Mesh(playerGeometry, playerMaterial);
+const playerGeo = new THREE.BoxGeometry(1, 2, 1);
+const playerMat = new THREE.MeshStandardMaterial({ color: 0x8888ff });
+const player = new THREE.Mesh(playerGeo, playerMat);
 player.position.set(0, 1, 0);
 scene.add(player);
 
 // ===============================
-// TREE (Interactable Object)
+// TREE (resource node)
 // ===============================
-const treeGeometry = new THREE.CylinderGeometry(0.5, 0.8, 5, 8);
-const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
-const tree = new THREE.Mesh(treeGeometry, treeMaterial);
+const treeGeo = new THREE.CylinderGeometry(0.5, 0.8, 5, 8);
+const treeMat = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+const tree = new THREE.Mesh(treeGeo, treeMat);
 tree.position.set(5, 2.5, 0);
 scene.add(tree);
 
 // ===============================
-// INPUT HANDLING (WASD + Mouse)
+// INPUT HANDLING
 // ===============================
 const keys = {};
 let isRightMouseDown = false;
@@ -94,25 +94,24 @@ window.addEventListener("mousemove", (e) => {
   }
 });
 
-// Disable right-click context menu
+// Prevent context menu on right-click
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // ===============================
-// CAMERA FOLLOW & ROTATION
+// CAMERA FOLLOW + ZOOM
 // ===============================
 let cameraAngle = 0;
 let cameraZoomDistance = 10;
 const minZoom = 4;
 const maxZoom = 20;
 
-// Scroll wheel zoom
-window.addEventListener("wheel", (event) => {
-  cameraZoomDistance += event.deltaY * 0.01;
+window.addEventListener("wheel", (e) => {
+  cameraZoomDistance += e.deltaY * 0.01;
   cameraZoomDistance = Math.max(minZoom, Math.min(maxZoom, cameraZoomDistance));
 });
 
 function updateCameraFollow() {
-  // Rotate camera when mouse is held
+  // Mouse-driven rotation
   if (isRightMouseDown || isLeftMouseDown) {
     cameraAngle -= mouseDeltaX * 0.002;
   }
@@ -120,45 +119,45 @@ function updateCameraFollow() {
   mouseDeltaX = 0;
 
   const offsetY = 5;
-  const cameraX = player.position.x + cameraZoomDistance * Math.sin(cameraAngle);
-  const cameraZ = player.position.z + cameraZoomDistance * Math.cos(cameraAngle);
-  const cameraY = player.position.y + offsetY;
+  const camX = player.position.x + cameraZoomDistance * Math.sin(cameraAngle);
+  const camZ = player.position.z + cameraZoomDistance * Math.cos(cameraAngle);
+  const camY = player.position.y + offsetY;
 
-  camera.position.set(cameraX, cameraY, cameraZ);
+  camera.position.set(camX, camY, camZ);
   camera.lookAt(player.position);
 
-  // If left-click held, player turns to face camera
+  // If left click held, rotate player to face camera
   if (isLeftMouseDown) {
     player.rotation.y = cameraAngle;
   }
 }
 
 // ===============================
-// PLAYER MOVEMENT
+// MOVEMENT
 // ===============================
 function handlePlayerMovement() {
   const speed = 0.1;
-  const direction = new THREE.Vector3();
+  const dir = new THREE.Vector3();
 
-  if (keys["w"]) direction.z -= 1;
-  if (keys["s"]) direction.z += 1;
-  if (keys["a"]) direction.x -= 1;
-  if (keys["d"]) direction.x += 1;
+  if (keys["w"]) dir.z -= 1;
+  if (keys["s"]) dir.z += 1;
+  if (keys["a"]) dir.x -= 1;
+  if (keys["d"]) dir.x += 1;
 
-  direction.normalize();
+  dir.normalize();
 
-  const move = direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+  const move = dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
   player.position.add(move.multiplyScalar(speed));
 }
 
 // ===============================
-// INTERACTION LOGIC
+// INTERACTION
 // ===============================
 function checkInteraction() {
-  const distance = player.position.distanceTo(tree.position);
+  const dist = player.position.distanceTo(tree.position);
   const interactionRange = 2.5;
 
-  if (distance <= interactionRange) {
+  if (dist <= interactionRange) {
     console.log("🪓 Chopping tree...");
   }
 }

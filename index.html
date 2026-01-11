@@ -21,6 +21,7 @@
       padding: 8px 12px;
       border-radius: 4px;
       z-index: 10;
+      pointer-events: none;
     }
 
     #craftingPrompt {
@@ -36,6 +37,7 @@
       border-radius: 4px;
       display: none;
       z-index: 10;
+      pointer-events: none;
     }
 
     #craftingMenu {
@@ -54,6 +56,7 @@
       width: 300px;
       text-align: center;
       cursor: grab;
+      pointer-events: auto;
     }
 
     #craftingHeader {
@@ -61,6 +64,7 @@
       font-weight: bold;
       margin-bottom: 10px;
       user-select: none;
+      pointer-events: auto;
     }
 
     .craft-btn {
@@ -72,6 +76,7 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      pointer-events: auto;
     }
 
     .craft-btn:hover {
@@ -102,9 +107,9 @@
   <script src="main.js"></script>
 
   <script>
-    // === Draggable Crafting Menu Script ===
     const craftingMenu = document.getElementById("craftingMenu");
     const craftingHeader = document.getElementById("craftingHeader");
+    const rendererCanvas = document.querySelector("canvas");
 
     let isDragging = false;
     let offsetX, offsetY;
@@ -114,18 +119,20 @@
       offsetX = e.clientX - craftingMenu.offsetLeft;
       offsetY = e.clientY - craftingMenu.offsetTop;
       document.body.style.userSelect = "none";
+      if (rendererCanvas) rendererCanvas.style.pointerEvents = "none";
     });
 
     document.addEventListener("mouseup", () => {
       isDragging = false;
       document.body.style.userSelect = "";
+      if (rendererCanvas) rendererCanvas.style.pointerEvents = "auto";
     });
 
     document.addEventListener("mousemove", (e) => {
       if (isDragging) {
         craftingMenu.style.left = `${e.clientX - offsetX}px`;
         craftingMenu.style.top = `${e.clientY - offsetY}px`;
-        craftingMenu.style.transform = "none"; // disables center transform when moved
+        craftingMenu.style.transform = "none";
       }
     });
   </script>

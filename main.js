@@ -4,12 +4,7 @@
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 5, 10);
 
 const renderer = new THREE.WebGLRenderer({
@@ -26,23 +21,12 @@ window.addEventListener("resize", () => {
 });
 
 // ==========================
-// ✅ LIGHTING (RESTORED — THIS FIXES BLACK SCREEN)
+// LIGHTING
 // ==========================
 scene.add(new THREE.AmbientLight(0x404040, 1.5));
-
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
-directionalLight.position.set(5, 10, 7);
-scene.add(directionalLight);
-
-// ==========================
-// GROUND
-// ==========================
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshStandardMaterial({ color: 0x228B22 })
-);
-ground.rotation.x = -Math.PI / 2;
-scene.add(ground);
+const light = new THREE.DirectionalLight(0xffffff, 1.2);
+light.position.set(5, 10, 7);
+scene.add(light);
 
 // ==========================
 // PLAYER
@@ -66,22 +50,34 @@ function updateEquippedVisual() {
     equippedMesh = null;
   }
 
-  if (!equippedItem) return;
+  if (equippedItem) {
+    equippedMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2, 0.8, 0.2),
+      new THREE.MeshStandardMaterial({ color: 0xffff00 })
+    );
+    equippedMesh.position.set(0.5, 0.5, 0);
+    player.add(equippedMesh);
+  }
 
-  equippedMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(0.2, 0.8, 0.2),
-    new THREE.MeshStandardMaterial({ color: 0xffff00 })
-  );
-  equippedMesh.position.set(0.6, 0.5, 0);
-  player.add(equippedMesh);
+  for (let i = 0; i < 12; i++) {
+    const slot = document.getElementById(`slot${i + 1}`);
+    if (!slot) continue;
+    if (toolbarSlots[i]) {
+      slot.textContent = toolbarSlots[i];
+      slot.style.backgroundColor = equippedItem === toolbarSlots[i] ? "#aaaaff" : "#dddddd";
+    } else {
+      slot.textContent = "";
+      slot.style.backgroundColor = "#eeeeee";
+    }
+  }
 }
 
 // ==========================
-// UI + INVENTORY
+// INVENTORY + UI
 // ==========================
 let woodCount = 0;
 const inventory = [];
-const toolbarSlots = new Array(12).fill(null);
+let toolbarSlots = new Array(12).fill(null); // 1 through =
 
 function updateUI() {
   document.getElementById("inventoryUI").textContent =
@@ -102,16 +98,21 @@ function updateUI() {
 }
 
 // ==========================
-// COLLISION
+// COLLISION + ENVIRONMENT
 // ==========================
 const solidBoxes = [];
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(100, 100),
+  new THREE.MeshStandardMaterial({ color: 0x228B22 })
+);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
 
 // ==========================
 // TREES
 // ==========================
 const trees = [];
-let canChop = true;
-const CHOP_COOLDOWN = 600;
 
 function createTree(x, z) {
   const trunk = new THREE.Mesh(
@@ -122,27 +123,22 @@ function createTree(x, z) {
   scene.add(trunk);
 
   const box = new THREE.Box3().setFromObject(trunk);
-
-  trees.push({
-    mesh: trunk,
-    box,
-    health: 5,
-    destroyed: false,
-    respawnTimer: 0
-  });
-
+  trees.push({ mesh: trunk, box, health: 5, destroyed: false, respawnTimer: 0 });
   solidBoxes.push(box);
 }
 
-[[5,0],[-5,5],[8,-3],[-8,-6],[0,-8]].forEach(p => createTree(p[0], p[1]));
+[[5, 0], [-5, 5], [8, -3], [-8, -6], [0, -8]].forEach(([x, z]) => createTree(x, z));
+
+let canChop = true;
+const CHOP_COOLDOWN = 600;
 
 function tryChopTree() {
   if (!canChop || equippedItem !== "Axe") return;
 
   for (const tree of trees) {
     if (tree.destroyed) continue;
-
-    if (player.position.distanceTo(tree.mesh.position) <= 2.5) {
+    const dist = player.position.distanceTo(tree.mesh.position);
+    if (dist <= 2.5) {
       tree.health--;
       canChop = false;
 
@@ -183,13 +179,38 @@ function handleTreeRespawn(delta) {
 // WORKBENCH
 // ==========================
 const workbench = new THREE.Mesh(
-  new THREE.BoxGeometry(2,1,1),
+  new THREE.BoxGeometry(2, 1, 1),
   new THREE.MeshStandardMaterial({ color: 0xffcc66 })
 );
-workbench.position.set(0,0.5,1);
+workbench.position.set(0, 0.5, 1);
 scene.add(workbench);
 
-solidBoxes.push(new THREE.Box3().setFromObject(workbench));
+const workbenchBox = new THREE.Box3().setFromObject(workbench);
+solidBoxes.push(workbenchBox);
+
+// ==========================
+// UI ELEMENTS
+// ==========================
+const craftingMenu = document.getElementById("craftingMenu");
+const buildingMenu = document.getElementById("buildingMenu");
+const inventoryMenu = document.getElementById("inventoryMenu");
+const craftingPrompt = document.getElementById("craftingPrompt");
+const placementPrompt = document.getElementById("placementPrompt");
+const craftingMessage = document.getElementById("craftingMessage");
+
+// ==========================
+// CRAFTING
+// ==========================
+function craftItem(item, cost) {
+  if (woodCount < cost) {
+    craftingMessage.textContent = "Not enough wood";
+    return;
+  }
+  woodCount -= cost;
+  inventory.push(item);
+  updateUI();
+  craftingMessage.textContent = `${item} crafted`;
+}
 
 // ==========================
 // INPUT
@@ -200,23 +221,36 @@ let rightMouse = false;
 let mouseDX = 0;
 let mouseDY = 0;
 
-window.addEventListener("keydown", e => {
+window.addEventListener("keydown", (e) => {
   keys[e.key.toLowerCase()] = true;
 
-  const equipKeys = {
-    "1":0,"2":1,"3":2,"4":3,"5":4,"6":5,
-    "7":6,"8":7,"9":8,"0":9,"-":10,"=":11
-  };
+  if (e.key === "b") buildingMenu.style.display =
+    buildingMenu.style.display === "none" ? "block" : "none";
 
-  if (equipKeys[e.key] !== undefined) {
-    equippedItem = toolbarSlots[equipKeys[e.key]];
+  if (e.key === "i") inventoryMenu.style.display =
+    inventoryMenu.style.display === "none" ? "block" : "none";
+
+  if (e.key === "e" && nearWorkbench) craftingMenu.style.display = "block";
+
+  if (e.key === "Escape") exitPlacementMode();
+
+  const equipKeys = {
+    "1": 0, "2": 1, "3": 2, "4": 3, "5": 4,
+    "6": 5, "7": 6, "8": 7, "9": 8, "0": 9,
+    "-": 10, "=": 11
+  };
+  const slotIndex = equipKeys[e.key];
+  if (slotIndex !== undefined) {
+    equippedItem = toolbarSlots[slotIndex];
     updateEquippedVisual();
   }
 });
 
-window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+window.addEventListener("keyup", (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
 
-window.addEventListener("mousedown", e => {
+window.addEventListener("mousedown", (e) => {
   if (e.button === 0) {
     leftMouse = true;
     tryChopTree();
@@ -224,17 +258,22 @@ window.addEventListener("mousedown", e => {
   if (e.button === 2) rightMouse = true;
 });
 
-window.addEventListener("mouseup", e => {
+window.addEventListener("mouseup", (e) => {
   if (e.button === 0) leftMouse = false;
   if (e.button === 2) rightMouse = false;
 });
 
-window.addEventListener("mousemove", e => {
+window.addEventListener("mousemove", (e) => {
   mouseDX = e.movementX;
   mouseDY = e.movementY;
 });
 
-window.addEventListener("contextmenu", e => e.preventDefault());
+window.addEventListener("contextmenu", (e) => e.preventDefault());
+
+window.addEventListener("wheel", (e) => {
+  camDistance += e.deltaY * 0.01;
+  camDistance = Math.max(4, Math.min(20, camDistance));
+});
 
 // ==========================
 // CAMERA
@@ -247,7 +286,7 @@ function updateCamera() {
   if (leftMouse || rightMouse) {
     camYaw -= mouseDX * 0.002;
     camPitch -= mouseDY * 0.002;
-    camPitch = Math.max(0.1, Math.min(Math.PI/2-0.2, camPitch));
+    camPitch = Math.max(0.1, Math.min(Math.PI / 2 - 0.2, camPitch));
   }
 
   mouseDX = mouseDY = 0;
@@ -257,18 +296,18 @@ function updateCamera() {
     player.position.y + camDistance * Math.cos(camPitch),
     player.position.z + camDistance * Math.sin(camPitch) * Math.cos(camYaw)
   );
-  camera.lookAt(player.position);
 
+  camera.lookAt(player.position);
   if (leftMouse) player.rotation.y = camYaw;
 }
 
 // ==========================
-// MOVEMENT
+// MOVEMENT + COLLISION
 // ==========================
 function willCollide(nextPos) {
   const box = new THREE.Box3().setFromCenterAndSize(
-    new THREE.Vector3(nextPos.x, nextPos.y+1, nextPos.z),
-    new THREE.Vector3(1,2,1)
+    new THREE.Vector3(nextPos.x, nextPos.y + 1, nextPos.z),
+    new THREE.Vector3(1, 2, 1)
   );
   return solidBoxes.some(b => box.intersectsBox(b));
 }
@@ -277,20 +316,94 @@ function handleMovement() {
   const speed = 0.1;
   const dir = new THREE.Vector3();
 
-  if (keys.w) dir.z -= 1;
-  if (keys.s) dir.z += 1;
-  if (keys.a) dir.x -= 1;
-  if (keys.d) dir.x += 1;
+  if (keys["w"]) dir.z -= 1;
+  if (keys["s"]) dir.z += 1;
+  if (keys["a"]) dir.x -= 1;
+  if (keys["d"]) dir.x += 1;
 
   if (!dir.length()) return;
 
-  dir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0), player.rotation.y);
+  dir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
   const next = player.position.clone().add(dir.multiplyScalar(speed));
   if (!willCollide(next)) player.position.copy(next);
 }
 
 // ==========================
-// LOOP
+// BUILDING SYSTEM
+// ==========================
+let placementMode = false;
+let placementGhost = null;
+let placementType = null;
+const raycaster = new THREE.Raycaster();
+
+function startBuilding(type) {
+  if (!inventory.includes(type)) return;
+
+  placementMode = true;
+  placementType = type;
+  placementPrompt.style.display = "block";
+
+  placementGhost = new THREE.Mesh(
+    new THREE.BoxGeometry(2, 2, 0.5),
+    new THREE.MeshStandardMaterial({ opacity: 0.5, transparent: true })
+  );
+  scene.add(placementGhost);
+}
+
+function exitPlacementMode() {
+  placementMode = false;
+  placementPrompt.style.display = "none";
+  if (placementGhost) scene.remove(placementGhost);
+  placementGhost = null;
+}
+
+function handlePlacement() {
+  if (!placementMode || !placementGhost) return;
+
+  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+  const hit = raycaster.intersectObject(ground);
+
+  if (hit.length) {
+    const p = hit[0].point;
+    const gx = Math.round(p.x / 2) * 2;
+    const gz = Math.round(p.z / 2) * 2;
+    placementGhost.position.set(gx, 1, gz);
+
+    if (leftMouse) {
+      const wall = placementGhost.clone();
+      wall.material = new THREE.MeshStandardMaterial({ color: 0x777777 });
+      scene.add(wall);
+
+      solidBoxes.push(new THREE.Box3().setFromObject(wall));
+      inventory.splice(inventory.indexOf(placementType), 1);
+      updateUI();
+      exitPlacementMode();
+    }
+  }
+
+  if (rightMouse) exitPlacementMode();
+}
+
+// ==========================
+// WORKBENCH PROXIMITY
+// ==========================
+let nearWorkbench = false;
+
+function checkWorkbenchProximity() {
+  nearWorkbench = player.position.distanceTo(workbench.position) <= 2.5;
+  craftingPrompt.style.display = nearWorkbench ? "block" : "none";
+}
+
+// ==========================
+// UI Close Button Helper
+// ==========================
+function closeUI(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "none";
+}
+
+// ==========================
+// MAIN LOOP
 // ==========================
 let lastTime = performance.now();
 function animate() {
@@ -302,10 +415,13 @@ function animate() {
 
   handleMovement();
   updateCamera();
+  handlePlacement();
   handleTreeRespawn(delta);
+  checkWorkbenchProximity();
 
   renderer.render(scene, camera);
 }
 
 updateUI();
+updateEquippedVisual();
 animate();

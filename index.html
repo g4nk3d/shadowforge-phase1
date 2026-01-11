@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shadowforge: Crafting Station</title>
+  <title>Shadowforge: Crafting Menu</title>
   <style>
     body {
       margin: 0;
@@ -48,6 +48,26 @@
       border-radius: 6px;
       display: none;
       z-index: 20;
+      width: 300px;
+      text-align: center;
+    }
+    .craft-btn {
+      display: block;
+      margin: 10px auto;
+      padding: 8px 14px;
+      background-color: #444;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .craft-btn:hover {
+      background-color: #666;
+    }
+    #craftingMessage {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #ff9999;
     }
   </style>
 </head>
@@ -56,8 +76,11 @@
   <div id="craftingPrompt">Press E to open crafting menu</div>
   <div id="craftingMenu">
     <h2>Crafting Menu</h2>
-    <p>Crafting UI will go here...</p>
-    <button onclick="closeCraftingMenu()">Close</button>
+    <button class="craft-btn" onclick="craftItem('Torch', 1)">Craft Torch (1 Wood)</button>
+    <button class="craft-btn" onclick="craftItem('Wall', 3)">Craft Wall (3 Wood)</button>
+    <button class="craft-btn" onclick="craftItem('Pickaxe', 5)">Craft Pickaxe (5 Wood)</button>
+    <p id="craftingMessage"></p>
+    <button class="craft-btn" onclick="closeCraftingMenu()">Close</button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>

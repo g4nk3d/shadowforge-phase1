@@ -1,8 +1,8 @@
 // ===============================
-// SCENE SETUP
+// SETUP
 // ===============================
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xaec6cf); // Sky blue-gray
+scene.background = new THREE.Color(0x87ceeb); // Light sky blue
 
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -23,23 +23,24 @@ window.addEventListener("resize", () => {
 });
 
 // ===============================
-// LIGHTING (FIXED)
+// LIGHTING FIXED
 // ===============================
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-directionalLight.position.set(10, 20, 10);
-scene.add(directionalLight);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.position.set(5, 10, 5);
+scene.add(dirLight);
 
-const ambientLight = new THREE.AmbientLight(0x404040);
-scene.add(ambientLight);
+const ambient = new THREE.AmbientLight(0x888888);
+scene.add(ambient);
 
 // ===============================
-// GROUND
+// GROUND FIXED
 // ===============================
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshStandardMaterial({ color: 0x3b3b3b })
+  new THREE.MeshStandardMaterial({ color: 0x556b2f })
 );
 ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
 scene.add(ground);
 
 // ===============================
@@ -62,29 +63,31 @@ function updateUI() {
 }
 
 // ===============================
-// TREES & COLLISION SYSTEM
+// TREES + COLLISION BOXES
 // ===============================
 const trees = [];
-const solidObjects = [];
+const solidBoxes = [];
 
 function createTree(x, z) {
-  const mesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.5, 0.8, 5, 8),
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.6, 5, 8),
     new THREE.MeshStandardMaterial({ color: 0x228b22 })
   );
-  mesh.position.set(x, 2.5, z);
-  scene.add(mesh);
+  trunk.position.set(x, 2.5, z);
+  scene.add(trunk);
+
+  const bbox = new THREE.Box3().setFromObject(trunk);
 
   const tree = {
-    mesh,
+    mesh: trunk,
+    box: bbox,
     health: 5,
     destroyed: false,
     respawnTimer: 0
   };
 
   trees.push(tree);
-  solidObjects.push(mesh);
-
+  solidBoxes.push(bbox);
   return tree;
 }
 
@@ -101,9 +104,8 @@ function spawnTrees() {
 }
 
 spawnTrees();
-
 // ===============================
-// INPUT HANDLING
+// INPUT CONTROLS
 // ===============================
 const keys = {};
 let isRightMouseDown = false;
@@ -173,18 +175,16 @@ function updateCamera() {
 }
 
 // ===============================
-// COLLISION DETECTION
+// COLLISION CHECK (Box vs Box)
 // ===============================
-function checkCollision(nextPos) {
-  const playerRadius = 0.75;
+function willCollide(nextPos) {
+  const playerBox = new THREE.Box3().setFromCenterAndSize(
+    new THREE.Vector3(nextPos.x, nextPos.y + 1, nextPos.z),
+    new THREE.Vector3(1, 2, 1)
+  );
 
-  for (const obj of solidObjects) {
-    if (!obj.visible) continue;
-
-    const dist = obj.position.distanceTo(nextPos);
-    const objRadius = 0.75;
-
-    if (dist < playerRadius + objRadius) {
+  for (const solidBox of solidBoxes) {
+    if (solidBox && playerBox.intersectsBox(solidBox)) {
       return true;
     }
   }
@@ -193,7 +193,7 @@ function checkCollision(nextPos) {
 }
 
 // ===============================
-// MOVEMENT SYSTEM (With Collision)
+// MOVEMENT
 // ===============================
 function handleMovement() {
   const speed = 0.1;
@@ -208,9 +208,9 @@ function handleMovement() {
 
   dir.normalize();
   const move = dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
-
   const nextPos = player.position.clone().add(move.clone().multiplyScalar(speed));
-  if (!checkCollision(nextPos)) {
+
+  if (!willCollide(nextPos)) {
     player.position.copy(nextPos);
   }
 }
@@ -229,8 +229,9 @@ function handleTreeInteraction(delta) {
         tree.destroyed = false;
         tree.health = 5;
         tree.mesh.visible = true;
-        if (!solidObjects.includes(tree.mesh)) {
-          solidObjects.push(tree.mesh);
+        tree.box.setFromObject(tree.mesh); // Rebuild bounding box
+        if (!solidBoxes.includes(tree.box)) {
+          solidBoxes.push(tree.box);
         }
         console.log("🌱 Tree respawned");
       }
@@ -248,8 +249,9 @@ function handleTreeInteraction(delta) {
         tree.destroyed = true;
         tree.respawnTimer = 20;
         tree.mesh.visible = false;
-        const i = solidObjects.indexOf(tree.mesh);
-        if (i !== -1) solidObjects.splice(i, 1);
+
+        const i = solidBoxes.indexOf(tree.box);
+        if (i !== -1) solidBoxes.splice(i, 1);
 
         woodCount++;
         updateUI();
@@ -276,6 +278,13 @@ function animate() {
   handleMovement();
   handleTreeInteraction(delta);
   updateCamera();
+
+  // Update bounding boxes of visible trees
+  for (const tree of trees) {
+    if (!tree.destroyed) {
+      tree.box.setFromObject(tree.mesh);
+    }
+  }
 
   renderer.render(scene, camera);
 }

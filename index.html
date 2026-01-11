@@ -3,31 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shadowforge</title>
+  <title>Shadowforge: Defenders of Mordor</title>
   <style>
     body {
       margin: 0;
       overflow: hidden;
     }
-
     #inventoryUI {
       position: absolute;
       top: 20px;
       left: 20px;
       font-family: sans-serif;
-      font-size: 20px;
+      font-size: 18px;
       color: white;
-      background-color: rgba(0, 0, 0, 0.5);
-      padding: 10px;
-      border-radius: 5px;
-      z-index: 999;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 8px 12px;
+      border-radius: 4px;
+      z-index: 10;
     }
   </style>
 </head>
 <body>
   <div id="inventoryUI">Wood: 0</div>
 
+  <!-- Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+
+  <!-- Your game logic -->
   <script src="main.js"></script>
 </body>
 </html>

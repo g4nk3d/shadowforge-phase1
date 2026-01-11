@@ -6,9 +6,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 camera.position.set(0, 5, 10);
 
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas'), antialias: true });
-
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -26,7 +24,7 @@ scene.add(directionalLight);
 // === GROUND ===
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshStandardMaterial({ color: 0x228B22 }) // Grass green
+  new THREE.MeshStandardMaterial({ color: 0x228B22 })
 );
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
@@ -299,3 +297,30 @@ function animate() {
 updateUI();
 animate();
 
+// === DRAGGING CRAFTING MENU ===
+const dragTarget = document.getElementById("craftingMenu");
+const dragHeader = document.getElementById("craftingHeader");
+
+let isDragging = false;
+let offsetX = 0;
+let offsetY = 0;
+
+dragHeader.addEventListener("mousedown", (e) => {
+  isDragging = true;
+  offsetX = e.clientX - dragTarget.offsetLeft;
+  offsetY = e.clientY - dragTarget.offsetTop;
+  document.body.style.userSelect = "none";
+});
+
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+  document.body.style.userSelect = "auto";
+});
+
+document.addEventListener("mousemove", (e) => {
+  if (isDragging) {
+    dragTarget.style.left = e.clientX - offsetX + "px";
+    dragTarget.style.top = e.clientY - offsetY + "px";
+    dragTarget.style.transform = "none";
+  }
+});

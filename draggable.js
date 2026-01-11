@@ -2,26 +2,32 @@ function makeDraggable(headerId, windowId) {
   const header = document.getElementById(headerId);
   const windowEl = document.getElementById(windowId);
 
-  if (!header || !windowEl) return; // Avoid crashing if elements aren't found
+  // ✅ HARD SAFETY CHECK — PREVENTS CRASH
+  if (!header || !windowEl) {
+    console.warn(`Draggable skipped: ${headerId} or ${windowId} not found`);
+    return;
+  }
 
-  let offsetX = 0, offsetY = 0;
+  let offsetX = 0;
+  let offsetY = 0;
   let dragging = false;
 
-  header.addEventListener("mousedown", e => {
+  header.addEventListener("mousedown", (e) => {
     dragging = true;
     offsetX = e.clientX - windowEl.offsetLeft;
     offsetY = e.clientY - windowEl.offsetTop;
   });
 
   window.addEventListener("mouseup", () => dragging = false);
-  window.addEventListener("mousemove", e => {
+
+  window.addEventListener("mousemove", (e) => {
     if (!dragging) return;
-    windowEl.style.left = (e.clientX - offsetX) + "px";
-    windowEl.style.top = (e.clientY - offsetY) + "px";
+    windowEl.style.left = `${e.clientX - offsetX}px`;
+    windowEl.style.top = `${e.clientY - offsetY}px`;
   });
 }
 
-// ✅ Make draggable windows after DOM is loaded
+// ✅ WAIT FOR DOM — CRITICAL
 window.addEventListener("DOMContentLoaded", () => {
   makeDraggable("craftingHeader", "craftingMenu");
   makeDraggable("buildingHeader", "buildingMenu");

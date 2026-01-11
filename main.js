@@ -1,5 +1,10 @@
+// ===============================
+// BASIC SCENE SETUP
+// ===============================
 const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
 
+// Camera
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -8,86 +13,129 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(0, 5, 10);
 
+// Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Handle resizing
-window.addEventListener('resize', () => {
+// Handle resize
+window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Lighting
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(10, 10, 10);
-scene.add(light);
+// ===============================
+// LIGHTING
+// ===============================
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(10, 20, 10);
+scene.add(directionalLight);
 
-// Ground
+const ambientLight = new THREE.AmbientLight(0x404040);
+scene.add(ambientLight);
+
+// ===============================
+// GROUND / TERRAIN
+// ===============================
 const groundGeometry = new THREE.PlaneGeometry(100, 100);
 const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x444444 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
-// Player
+// ===============================
+// PLAYER
+// ===============================
 const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
 const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x8888ff });
 const player = new THREE.Mesh(playerGeometry, playerMaterial);
 player.position.set(0, 1, 0);
 scene.add(player);
 
-// Key tracking
+// ===============================
+// INTERACTABLE TREE (RESOURCE NODE)
+// ===============================
+const treeGeometry = new THREE.CylinderGeometry(0.5, 0.8, 5, 8);
+const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
+const tree = new THREE.Mesh(treeGeometry, treeMaterial);
+tree.position.set(5, 2.5, 0);
+scene.add(tree);
+
+// ===============================
+// INPUT HANDLING (WASD)
+// ===============================
 const keys = {};
-window.addEventListener('keydown', (e) => {
-  keys[e.key.toLowerCase()] = true;
-});
-window.addEventListener('keyup', (e) => {
-  keys[e.key.toLowerCase()] = false;
+
+window.addEventListener("keydown", (event) => {
+  keys[event.key.toLowerCase()] = true;
 });
 
-// Movement logic
+window.addEventListener("keyup", (event) => {
+  keys[event.key.toLowerCase()] = false;
+});
+
+// ===============================
+// PLAYER MOVEMENT
+// ===============================
 function handlePlayerMovement() {
   const speed = 0.1;
-  if (keys['w']) player.position.z -= speed;
-  if (keys['s']) player.position.z += speed;
-  if (keys['a']) player.position.x -= speed;
-  if (keys['d']) player.position.x += speed;
+
+  if (keys["w"]) player.position.z -= speed;
+  if (keys["s"]) player.position.z += speed;
+  if (keys["a"]) player.position.x -= speed;
+  if (keys["d"]) player.position.x += speed;
 }
 
-// Camera follow (tight behind-player view)
+// ===============================
+// CAMERA FOLLOW (GAME-STYLE)
+// ===============================
 function updateCameraFollow() {
   const offset = new THREE.Vector3(0, 5, 10);
   const targetPosition = player.position.clone().add(offset);
+
   camera.position.lerp(targetPosition, 0.1);
   camera.lookAt(player.position);
 }
 
-// OrbitControls (optional but refined)
+// ===============================
+// INTERACTION CHECK (TREE)
+// ===============================
+function checkInteraction() {
+  const distance = player.position.distanceTo(tree.position);
+  const interactionRange = 2.5;
+
+  if (distance <= interactionRange) {
+    console.log("🪓 Chopping tree...");
+  }
+}
+
+// ===============================
+// ORBIT CONTROLS (REDUCED SENSITIVITY)
+// ===============================
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.05;
+controls.dampingFactor = 0.08;
 controls.enableKeys = false;
-controls.screenSpacePanning = false;
-controls.minDistance = 5;
-controls.maxDistance = 50;
+controls.rotateSpeed = 0.3;
+controls.zoomSpeed = 0.4;
+controls.panSpeed = 0.3;
 controls.maxPolarAngle = Math.PI / 2;
 
-// ✅ Reduce camera sensitivity
-controls.rotateSpeed = 0.3;   // Default was 1.0
-controls.zoomSpeed = 0.5;     // Default was 1.0
-controls.panSpeed = 0.3;      // Default was 1.0
-
-// Optional: disable right-click panning (comment out if you want to keep it)
+// Optional: disable right-click pan
 controls.mouseButtons.RIGHT = null;
 
-// Animation loop
+// ===============================
+// ANIMATION LOOP
+// ===============================
 function animate() {
   requestAnimationFrame(animate);
+
   handlePlayerMovement();
+  checkInteraction();
   updateCameraFollow();
   controls.update();
+
   renderer.render(scene, camera);
 }
 

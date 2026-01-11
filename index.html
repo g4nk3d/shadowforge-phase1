@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shadowforge: Defenders of Mordor</title>
+  <title>Shadowforge: Crafting Station</title>
   <style>
     body {
       margin: 0;
@@ -21,15 +21,46 @@
       border-radius: 4px;
       z-index: 10;
     }
+    #craftingPrompt {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: sans-serif;
+      font-size: 16px;
+      color: white;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 6px 10px;
+      border-radius: 4px;
+      display: none;
+      z-index: 10;
+    }
+    #craftingMenu {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: sans-serif;
+      font-size: 18px;
+      color: white;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border-radius: 6px;
+      display: none;
+      z-index: 20;
+    }
   </style>
 </head>
 <body>
   <div id="inventoryUI">Wood: 0</div>
+  <div id="craftingPrompt">Press E to open crafting menu</div>
+  <div id="craftingMenu">
+    <h2>Crafting Menu</h2>
+    <p>Crafting UI will go here...</p>
+    <button onclick="closeCraftingMenu()">Close</button>
+  </div>
 
-  <!-- Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
-
-  <!-- Your game logic -->
   <script src="main.js"></script>
 </body>
 </html>

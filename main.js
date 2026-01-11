@@ -1,14 +1,11 @@
 // ===============================
-// BASIC SETUP
+// SCENE SETUP
 // ===============================
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111111);
 
 const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
+  75, window.innerWidth / window.innerHeight, 0.1, 1000
 );
 camera.position.set(0, 5, 10);
 
@@ -25,12 +22,8 @@ window.addEventListener("resize", () => {
 // ===============================
 // LIGHTING
 // ===============================
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(10, 20, 10);
-scene.add(light);
-
-const ambient = new THREE.AmbientLight(0x404040);
-scene.add(ambient);
+scene.add(new THREE.DirectionalLight(0xffffff, 1).position.set(10, 20, 10));
+scene.add(new THREE.AmbientLight(0x404040));
 
 // ===============================
 // GROUND
@@ -53,33 +46,43 @@ player.position.set(0, 1, 0);
 scene.add(player);
 
 // ===============================
-// TREE (resource node)
-// ===============================
-const tree = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.5, 0.8, 5, 8),
-  new THREE.MeshStandardMaterial({ color: 0x228b22 })
-);
-tree.position.set(5, 2.5, 0);
-scene.add(tree);
-
-// Tree state
-let treeHealth = 5;
-let canChop = true;
-
-// ===============================
-// INVENTORY SYSTEM
+// INVENTORY UI
 // ===============================
 let woodCount = 0;
-
 function updateUI() {
   const ui = document.getElementById("inventoryUI");
-  if (ui) {
-    ui.textContent = `Wood: ${woodCount}`;
-  }
+  if (ui) ui.textContent = `Wood: ${woodCount}`;
 }
 
 // ===============================
-// INPUT HANDLING
+// TREES: MULTIPLE INSTANCES
+// ===============================
+const trees = [];
+
+function createTree(x, z) {
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.8, 5, 8),
+    new THREE.MeshStandardMaterial({ color: 0x228b22 })
+  );
+  mesh.position.set(x, 2.5, z);
+  scene.add(mesh);
+
+  return {
+    mesh,
+    position: new THREE.Vector3(x, 2.5, z),
+    health: 5,
+    isDestroyed: false,
+    respawnTimer: 0,
+  };
+}
+
+// Initial tree spawns
+trees.push(createTree(5, 0));
+trees.push(createTree(-5, 5));
+trees.push(createTree(10, -4));
+
+// ===============================
+// INPUT
 // ===============================
 const keys = {};
 let isRightMouseDown = false;
@@ -87,13 +90,8 @@ let isLeftMouseDown = false;
 let mouseDeltaX = 0;
 let mouseDeltaY = 0;
 
-window.addEventListener("keydown", (e) => {
-  keys[e.key.toLowerCase()] = true;
-});
-
-window.addEventListener("keyup", (e) => {
-  keys[e.key.toLowerCase()] = false;
-});
+window.addEventListener("keydown", (e) => keys[e.key.toLowerCase()] = true);
+window.addEventListener("keyup", (e) => keys[e.key.toLowerCase()] = false);
 
 window.addEventListener("mousedown", (e) => {
   if (e.button === 2) isRightMouseDown = true;
@@ -115,15 +113,13 @@ window.addEventListener("mousemove", (e) => {
 window.addEventListener("contextmenu", (e) => e.preventDefault());
 
 // ===============================
-// CAMERA SETTINGS
+// CAMERA CONTROL
 // ===============================
 let cameraYaw = 0;
 let cameraPitch = 0.3;
 let cameraDistance = 10;
-const minZoom = 4;
-const maxZoom = 20;
-const minPitch = 0.1;
-const maxPitch = Math.PI / 2 - 0.2;
+const minZoom = 4, maxZoom = 20;
+const minPitch = 0.1, maxPitch = Math.PI / 2 - 0.2;
 
 window.addEventListener("wheel", (e) => {
   cameraDistance += e.deltaY * 0.01;
@@ -147,13 +143,11 @@ function updateCamera() {
   camera.position.set(x, y, z);
   camera.lookAt(player.position);
 
-  if (isLeftMouseDown) {
-    player.rotation.y = cameraYaw;
-  }
+  if (isLeftMouseDown) player.rotation.y = cameraYaw;
 }
 
 // ===============================
-// MOVEMENT
+// PLAYER MOVEMENT
 // ===============================
 function handleMovement() {
   const speed = 0.1;
@@ -165,55 +159,77 @@ function handleMovement() {
   if (keys["d"]) dir.x += 1;
 
   dir.normalize();
-
   const move = dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
   player.position.add(move.multiplyScalar(speed));
 }
 
 // ===============================
-// INTERACTION / CHOPPING
+// INTERACTION: MULTIPLE TREES
 // ===============================
-function checkInteraction() {
-  if (!tree || treeHealth <= 0) return;
+let canChop = true;
+const chopCooldown = 1000; // ms
 
-  const dist = player.position.distanceTo(tree.position);
-  const range = 2.5;
+function handleTreeInteraction() {
+  for (const tree of trees) {
+    if (tree.isDestroyed) continue;
 
-  if (dist <= range && canChop) {
-    chopTree();
+    const dist = player.position.distanceTo(tree.mesh.position);
+    if (dist <= 2.5 && canChop) {
+      tree.health--;
+      canChop = false;
+
+      console.log(`🪓 Chopped tree! HP left: ${tree.health}`);
+
+      if (tree.health <= 0) {
+        scene.remove(tree.mesh);
+        tree.isDestroyed = true;
+        tree.respawnTimer = 20; // seconds
+        woodCount++;
+        updateUI();
+        console.log("🌲 Tree destroyed! +1 Wood");
+      }
+
+      setTimeout(() => {
+        canChop = true;
+      }, chopCooldown);
+    }
   }
 }
 
-function chopTree() {
-  treeHealth--;
-  canChop = false;
+function updateTreeRespawns(deltaTime) {
+  for (const tree of trees) {
+    if (!tree.isDestroyed) continue;
 
-  console.log("🪓 Chopped tree! Remaining HP:", treeHealth);
-
-  if (treeHealth <= 0) {
-    scene.remove(tree);
-    woodCount += 1;
-    updateUI();
-    console.log("🌲 Tree destroyed! +1 Wood");
+    tree.respawnTimer -= deltaTime;
+    if (tree.respawnTimer <= 0) {
+      tree.health = 5;
+      tree.isDestroyed = false;
+      tree.mesh.position.copy(tree.position);
+      scene.add(tree.mesh);
+      console.log("🌱 Tree respawned!");
+    }
   }
-
-  setTimeout(() => {
-    canChop = true;
-  }, 1000);
 }
 
 // ===============================
-// ANIMATION LOOP
+// MAIN LOOP
 // ===============================
+let lastTime = performance.now();
+
 function animate() {
   requestAnimationFrame(animate);
 
+  const now = performance.now();
+  const delta = (now - lastTime) / 1000;
+  lastTime = now;
+
   handleMovement();
-  checkInteraction();
+  handleTreeInteraction();
+  updateTreeRespawns(delta);
   updateCamera();
 
   renderer.render(scene, camera);
 }
 
-updateUI(); // Initialize UI
+updateUI();
 animate();

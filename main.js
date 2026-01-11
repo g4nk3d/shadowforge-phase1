@@ -5,7 +5,10 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111111);
 
 const camera = new THREE.PerspectiveCamera(
-  75, window.innerWidth / window.innerHeight, 0.1, 1000
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
 );
 camera.position.set(0, 5, 10);
 
@@ -22,7 +25,10 @@ window.addEventListener("resize", () => {
 // ===============================
 // LIGHTING
 // ===============================
-scene.add(new THREE.DirectionalLight(0xffffff, 1).position.set(10, 20, 10));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(10, 20, 10);
+scene.add(dirLight);
+
 scene.add(new THREE.AmbientLight(0x404040));
 
 // ===============================
@@ -46,7 +52,7 @@ player.position.set(0, 1, 0);
 scene.add(player);
 
 // ===============================
-// INVENTORY UI
+// INVENTORY
 // ===============================
 let woodCount = 0;
 function updateUI() {
@@ -55,7 +61,7 @@ function updateUI() {
 }
 
 // ===============================
-// TREES: MULTIPLE INSTANCES
+// TREE SYSTEM
 // ===============================
 const trees = [];
 
@@ -64,6 +70,7 @@ function createTree(x, z) {
     new THREE.CylinderGeometry(0.5, 0.8, 5, 8),
     new THREE.MeshStandardMaterial({ color: 0x228b22 })
   );
+
   mesh.position.set(x, 2.5, z);
   scene.add(mesh);
 
@@ -71,15 +78,27 @@ function createTree(x, z) {
     mesh,
     position: new THREE.Vector3(x, 2.5, z),
     health: 5,
-    isDestroyed: false,
-    respawnTimer: 0,
+    destroyed: false,
+    respawnTimer: 0
   };
 }
 
-// Initial tree spawns
-trees.push(createTree(5, 0));
-trees.push(createTree(-5, 5));
-trees.push(createTree(10, -4));
+function spawnTrees() {
+  const positions = [
+    [5, 0],
+    [-5, 5],
+    [10, -4],
+    [-8, -3],
+    [0, -8]
+  ];
+
+  for (const [x, z] of positions) {
+    trees.push(createTree(x, z));
+  }
+}
+
+// 🔥 IMPORTANT: actually spawn them
+spawnTrees();
 
 // ===============================
 // INPUT
@@ -87,67 +106,72 @@ trees.push(createTree(10, -4));
 const keys = {};
 let isRightMouseDown = false;
 let isLeftMouseDown = false;
-let mouseDeltaX = 0;
-let mouseDeltaY = 0;
+let mouseDX = 0;
+let mouseDY = 0;
 
-window.addEventListener("keydown", (e) => keys[e.key.toLowerCase()] = true);
-window.addEventListener("keyup", (e) => keys[e.key.toLowerCase()] = false);
+window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-window.addEventListener("mousedown", (e) => {
-  if (e.button === 2) isRightMouseDown = true;
+window.addEventListener("mousedown", e => {
   if (e.button === 0) isLeftMouseDown = true;
+  if (e.button === 2) isRightMouseDown = true;
 });
 
-window.addEventListener("mouseup", (e) => {
-  if (e.button === 2) isRightMouseDown = false;
+window.addEventListener("mouseup", e => {
   if (e.button === 0) isLeftMouseDown = false;
+  if (e.button === 2) isRightMouseDown = false;
 });
 
-window.addEventListener("mousemove", (e) => {
-  if (isRightMouseDown || isLeftMouseDown) {
-    mouseDeltaX = e.movementX;
-    mouseDeltaY = e.movementY;
+window.addEventListener("mousemove", e => {
+  if (isLeftMouseDown || isRightMouseDown) {
+    mouseDX = e.movementX;
+    mouseDY = e.movementY;
   }
 });
 
-window.addEventListener("contextmenu", (e) => e.preventDefault());
+window.addEventListener("contextmenu", e => e.preventDefault());
 
 // ===============================
-// CAMERA CONTROL
+// CAMERA
 // ===============================
-let cameraYaw = 0;
-let cameraPitch = 0.3;
-let cameraDistance = 10;
-const minZoom = 4, maxZoom = 20;
-const minPitch = 0.1, maxPitch = Math.PI / 2 - 0.2;
+let camYaw = 0;
+let camPitch = 0.3;
+let camDistance = 10;
 
-window.addEventListener("wheel", (e) => {
-  cameraDistance += e.deltaY * 0.01;
-  cameraDistance = Math.max(minZoom, Math.min(maxZoom, cameraDistance));
+const MIN_ZOOM = 4;
+const MAX_ZOOM = 20;
+const MIN_PITCH = 0.1;
+const MAX_PITCH = Math.PI / 2 - 0.2;
+
+window.addEventListener("wheel", e => {
+  camDistance += e.deltaY * 0.01;
+  camDistance = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camDistance));
 });
 
 function updateCamera() {
   if (isLeftMouseDown || isRightMouseDown) {
-    cameraYaw -= mouseDeltaX * 0.002;
-    cameraPitch -= mouseDeltaY * 0.002;
-    cameraPitch = Math.max(minPitch, Math.min(maxPitch, cameraPitch));
+    camYaw -= mouseDX * 0.002;
+    camPitch -= mouseDY * 0.002;
+    camPitch = Math.max(MIN_PITCH, Math.min(MAX_PITCH, camPitch));
   }
 
-  mouseDeltaX = 0;
-  mouseDeltaY = 0;
+  mouseDX = 0;
+  mouseDY = 0;
 
-  const x = player.position.x + cameraDistance * Math.sin(cameraPitch) * Math.sin(cameraYaw);
-  const y = player.position.y + cameraDistance * Math.cos(cameraPitch);
-  const z = player.position.z + cameraDistance * Math.sin(cameraPitch) * Math.cos(cameraYaw);
+  const x = player.position.x + camDistance * Math.sin(camPitch) * Math.sin(camYaw);
+  const y = player.position.y + camDistance * Math.cos(camPitch);
+  const z = player.position.z + camDistance * Math.sin(camPitch) * Math.cos(camYaw);
 
   camera.position.set(x, y, z);
   camera.lookAt(player.position);
 
-  if (isLeftMouseDown) player.rotation.y = cameraYaw;
+  if (isLeftMouseDown) {
+    player.rotation.y = camYaw;
+  }
 }
 
 // ===============================
-// PLAYER MOVEMENT
+// MOVEMENT
 // ===============================
 function handleMovement() {
   const speed = 0.1;
@@ -164,49 +188,41 @@ function handleMovement() {
 }
 
 // ===============================
-// INTERACTION: MULTIPLE TREES
+// TREE CHOPPING + RESPAWN
 // ===============================
 let canChop = true;
-const chopCooldown = 1000; // ms
+const CHOP_COOLDOWN = 1000;
 
-function handleTreeInteraction() {
+function handleTreeInteraction(delta) {
   for (const tree of trees) {
-    if (tree.isDestroyed) continue;
+    if (tree.destroyed) {
+      tree.respawnTimer -= delta;
+      if (tree.respawnTimer <= 0) {
+        tree.destroyed = false;
+        tree.health = 5;
+        scene.add(tree.mesh);
+        console.log("🌱 Tree respawned");
+      }
+      continue;
+    }
 
     const dist = player.position.distanceTo(tree.mesh.position);
     if (dist <= 2.5 && canChop) {
       tree.health--;
       canChop = false;
 
-      console.log(`🪓 Chopped tree! HP left: ${tree.health}`);
+      console.log(`🪓 Tree hit! HP: ${tree.health}`);
 
       if (tree.health <= 0) {
+        tree.destroyed = true;
+        tree.respawnTimer = 20;
         scene.remove(tree.mesh);
-        tree.isDestroyed = true;
-        tree.respawnTimer = 20; // seconds
         woodCount++;
         updateUI();
         console.log("🌲 Tree destroyed! +1 Wood");
       }
 
-      setTimeout(() => {
-        canChop = true;
-      }, chopCooldown);
-    }
-  }
-}
-
-function updateTreeRespawns(deltaTime) {
-  for (const tree of trees) {
-    if (!tree.isDestroyed) continue;
-
-    tree.respawnTimer -= deltaTime;
-    if (tree.respawnTimer <= 0) {
-      tree.health = 5;
-      tree.isDestroyed = false;
-      tree.mesh.position.copy(tree.position);
-      scene.add(tree.mesh);
-      console.log("🌱 Tree respawned!");
+      setTimeout(() => canChop = true, CHOP_COOLDOWN);
     }
   }
 }
@@ -224,8 +240,7 @@ function animate() {
   lastTime = now;
 
   handleMovement();
-  handleTreeInteraction();
-  updateTreeRespawns(delta);
+  handleTreeInteraction(delta);
   updateCamera();
 
   renderer.render(scene, camera);

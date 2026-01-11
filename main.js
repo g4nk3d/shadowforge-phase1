@@ -375,6 +375,11 @@ function animate() {
 
   renderer.render(scene, camera);
 }
+function closeUI(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "none";
+}
 
 updateUI();
 animate();
+

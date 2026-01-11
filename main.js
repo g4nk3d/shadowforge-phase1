@@ -25,10 +25,7 @@ window.addEventListener("resize", () => {
 // ===============================
 // LIGHTING
 // ===============================
-const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-dirLight.position.set(10, 20, 10);
-scene.add(dirLight);
-
+scene.add(new THREE.DirectionalLight(0xffffff, 1).position.set(10, 20, 10));
 scene.add(new THREE.AmbientLight(0x404040));
 
 // ===============================
@@ -61,7 +58,7 @@ function updateUI() {
 }
 
 // ===============================
-// TREE SYSTEM
+// TREES + COLLISION
 // ===============================
 const trees = [];
 
@@ -70,7 +67,6 @@ function createTree(x, z) {
     new THREE.CylinderGeometry(0.5, 0.8, 5, 8),
     new THREE.MeshStandardMaterial({ color: 0x228b22 })
   );
-
   mesh.position.set(x, 2.5, z);
   scene.add(mesh);
 
@@ -97,7 +93,6 @@ function spawnTrees() {
   }
 }
 
-// 🔥 IMPORTANT: actually spawn them
 spawnTrees();
 
 // ===============================
@@ -171,80 +166,22 @@ function updateCamera() {
 }
 
 // ===============================
-// MOVEMENT
+// MOVEMENT + COLLISION CHECK
 // ===============================
+function checkCollision(nextPos) {
+  const radius = 1;
+
+  for (const tree of trees) {
+    if (tree.destroyed) continue;
+    const dist = tree.mesh.position.distanceTo(nextPos);
+    if (dist < radius + 0.75) {
+      return true; // Collides with tree
+    }
+  }
+
+  return false;
+}
+
 function handleMovement() {
   const speed = 0.1;
   const dir = new THREE.Vector3();
-
-  if (keys["w"]) dir.z -= 1;
-  if (keys["s"]) dir.z += 1;
-  if (keys["a"]) dir.x -= 1;
-  if (keys["d"]) dir.x += 1;
-
-  dir.normalize();
-  const move = dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
-  player.position.add(move.multiplyScalar(speed));
-}
-
-// ===============================
-// TREE CHOPPING + RESPAWN
-// ===============================
-let canChop = true;
-const CHOP_COOLDOWN = 1000;
-
-function handleTreeInteraction(delta) {
-  for (const tree of trees) {
-    if (tree.destroyed) {
-      tree.respawnTimer -= delta;
-      if (tree.respawnTimer <= 0) {
-        tree.destroyed = false;
-        tree.health = 5;
-        scene.add(tree.mesh);
-        console.log("🌱 Tree respawned");
-      }
-      continue;
-    }
-
-    const dist = player.position.distanceTo(tree.mesh.position);
-    if (dist <= 2.5 && canChop) {
-      tree.health--;
-      canChop = false;
-
-      console.log(`🪓 Tree hit! HP: ${tree.health}`);
-
-      if (tree.health <= 0) {
-        tree.destroyed = true;
-        tree.respawnTimer = 20;
-        scene.remove(tree.mesh);
-        woodCount++;
-        updateUI();
-        console.log("🌲 Tree destroyed! +1 Wood");
-      }
-
-      setTimeout(() => canChop = true, CHOP_COOLDOWN);
-    }
-  }
-}
-
-// ===============================
-// MAIN LOOP
-// ===============================
-let lastTime = performance.now();
-
-function animate() {
-  requestAnimationFrame(animate);
-
-  const now = performance.now();
-  const delta = (now - lastTime) / 1000;
-  lastTime = now;
-
-  handleMovement();
-  handleTreeInteraction(delta);
-  updateCamera();
-
-  renderer.render(scene, camera);
-}
-
-updateUI();
-animate();

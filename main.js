@@ -67,6 +67,18 @@ let treeHealth = 5;
 let canChop = true;
 
 // ===============================
+// INVENTORY SYSTEM
+// ===============================
+let woodCount = 0;
+
+function updateUI() {
+  const ui = document.getElementById("inventoryUI");
+  if (ui) {
+    ui.textContent = `Wood: ${woodCount}`;
+  }
+}
+
+// ===============================
 // INPUT HANDLING
 // ===============================
 const keys = {};
@@ -180,16 +192,18 @@ function chopTree() {
 
   if (treeHealth <= 0) {
     scene.remove(tree);
+    woodCount += 1;
+    updateUI();
     console.log("🌲 Tree destroyed! +1 Wood");
   }
 
   setTimeout(() => {
     canChop = true;
-  }, 1000); // 1 second cooldown
+  }, 1000);
 }
 
 // ===============================
-// ANIMATE LOOP
+// ANIMATION LOOP
 // ===============================
 function animate() {
   requestAnimationFrame(animate);
@@ -201,4 +215,5 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+updateUI(); // Initialize UI
 animate();

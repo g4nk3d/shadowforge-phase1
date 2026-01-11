@@ -94,9 +94,9 @@ spawnTrees();
 // === CRAFTING STATION ===
 const workbench = new THREE.Mesh(
   new THREE.BoxGeometry(2, 1, 1),
-  new THREE.MeshStandardMaterial({ color: 0x654321 })
+  new THREE.MeshStandardMaterial({ color: 0xffcc66 }) // bright color
 );
-workbench.position.set(0, 0.5, 5);
+workbench.position.set(0, 0.5, 1); // spawn right in front of player
 scene.add(workbench);
 
 let nearWorkbench = false;
@@ -299,3 +299,4 @@ function animate() {
 
 updateUI();
 animate();
+

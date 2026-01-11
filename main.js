@@ -39,7 +39,7 @@ player.position.set(0, 1, 0);
 scene.add(player);
 
 // === CAMERA CONTROLS ===
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 1, 0);
 controls.update();
 
@@ -56,4 +56,5 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
+
 

@@ -4,12 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Shadowforge</title>
+
+  <!-- ✅ Three.js (using CDN version for now) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js"></script>
+
+  <!-- ✅ Styles -->
   <style>
-    html, body {
+    body {
       margin: 0;
       overflow: hidden;
-      font-family: sans-serif;
-      user-select: none;
+      background: #000;
     }
 
     canvas {
@@ -20,151 +24,134 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0,0,0,0.5);
       color: white;
-      padding: 8px;
-      z-index: 10;
-    }
-
-    #craftingMenu,
-    #buildingMenu,
-    #inventoryMenu {
-      position: absolute;
-      top: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 250px;
-      background: rgba(0, 0, 0, 0.85);
-      color: white;
-      padding: 10px;
-      border: 1px solid #aaa;
-      display: none;
-      z-index: 20;
-    }
-
-    #craftingMenu h3,
-    #buildingMenu h3,
-    #inventoryMenu h3 {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: move;
-    }
-
-    .close-btn {
-      background: #aa4444;
-      border: none;
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-      padding: 2px 8px;
-      cursor: pointer;
-    }
-
-    button {
-      margin-top: 6px;
-      margin-bottom: 4px;
-      padding: 4px 8px;
-    }
-
-    #craftingPrompt,
-    #placementPrompt {
-      position: absolute;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: white;
-      font-size: 16px;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-      display: none;
-      z-index: 15;
+      font-family: sans-serif;
     }
 
     #toolbar {
       position: absolute;
-      bottom: 10px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 4px;
-      z-index: 15;
+      gap: 5px;
+      z-index: 10;
     }
 
-    .slot {
+    .toolbar-slot {
       width: 40px;
       height: 40px;
-      background: rgba(255, 255, 255, 0.2);
-      border: 1px solid #aaa;
+      background: #eeeeee;
+      border: 1px solid #888;
       text-align: center;
       line-height: 40px;
-      color: white;
+      font-family: sans-serif;
       font-weight: bold;
+      color: black;
     }
 
-    ul {
-      padding-left: 15px;
+    .ui-window {
+      position: absolute;
+      background: #222;
+      color: white;
+      padding: 10px;
+      border: 1px solid #555;
+      z-index: 20;
+    }
+
+    .ui-header {
+      cursor: move;
+      background: #444;
+      padding: 5px;
+      font-weight: bold;
+      user-select: none;
+    }
+
+    button {
+      margin: 4px 0;
+      display: block;
+      font-size: 14px;
+    }
+
+    #craftingPrompt, #placementPrompt {
+      position: absolute;
+      color: white;
+      z-index: 5;
+    }
+
+    #craftingPrompt {
+      bottom: 50%;
+      left: 50%;
+      transform: translate(-50%, 50%);
+    }
+
+    #placementPrompt {
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
     }
   </style>
 </head>
 <body>
+
+  <!-- ✅ Game Canvas -->
   <canvas id="gameCanvas"></canvas>
 
+  <!-- ✅ UI Overlay -->
   <div id="inventoryUI">Wood: 0</div>
 
-  <!-- Crafting Menu -->
-  <div id="craftingMenu">
-    <h3>
-      Crafting
-      <button class="close-btn" onclick="closeUI('craftingMenu')">X</button>
-    </h3>
-    <button onclick="craftItem('Torch', 2)">Craft Torch (2 Wood)</button><br />
-    <button onclick="craftItem('Wall', 3)">Craft Wall (3 Wood)</button>
-    <div id="craftingMessage"></div>
+  <!-- ✅ Toolbar (1 to =) -->
+  <div id="toolbar">
+    <div id="slot1" class="toolbar-slot">1</div>
+    <div id="slot2" class="toolbar-slot">2</div>
+    <div id="slot3" class="toolbar-slot">3</div>
+    <div id="slot4" class="toolbar-slot">4</div>
+    <div id="slot5" class="toolbar-slot">5</div>
+    <div id="slot6" class="toolbar-slot">6</div>
+    <div id="slot7" class="toolbar-slot">7</div>
+    <div id="slot8" class="toolbar-slot">8</div>
+    <div id="slot9" class="toolbar-slot">9</div>
+    <div id="slot10" class="toolbar-slot">0</div>
+    <div id="slot11" class="toolbar-slot">-</div>
+    <div id="slot12" class="toolbar-slot">=</div>
   </div>
 
-  <!-- Building Menu -->
-  <div id="buildingMenu">
-    <h3>
+  <!-- ✅ Crafting Menu -->
+  <div id="craftingMenu" class="ui-window" style="display:none; top: 100px; left: 100px;">
+    <div id="craftingHeader" class="ui-header">
+      Crafting
+      <button onclick="closeUI('craftingMenu')" style="float: right;">X</button>
+    </div>
+    <button onclick="craftItem('Axe', 3)">Craft Axe (3 wood)</button>
+    <button onclick="craftItem('Wall', 2)">Craft Wall (2 wood)</button>
+    <div id="craftingMessage" style="margin-top: 5px;"></div>
+  </div>
+
+  <!-- ✅ Building Menu -->
+  <div id="buildingMenu" class="ui-window" style="display:none; top: 100px; right: 100px;">
+    <div id="buildingHeader" class="ui-header">
       Building
-      <button class="close-btn" onclick="closeUI('buildingMenu')">X</button>
-    </h3>
+      <button onclick="closeUI('buildingMenu')" style="float: right;">X</button>
+    </div>
     <button onclick="startBuilding('Wall')">Place Wall</button>
   </div>
 
-  <!-- Inventory Menu -->
-  <div id="inventoryMenu">
-    <h3>
+  <!-- ✅ Inventory Menu -->
+  <div id="inventoryMenu" class="ui-window" style="display:none; top: 100px; left: 50%; transform: translateX(-50%);">
+    <div id="inventoryHeader" class="ui-header">
       Inventory
-      <button class="close-btn" onclick="closeUI('inventoryMenu')">X</button>
-    </h3>
+      <button onclick="closeUI('inventoryMenu')" style="float: right;">X</button>
+    </div>
     <ul id="inventoryList"></ul>
   </div>
 
-  <div id="craftingPrompt">Press E to craft</div>
-  <div id="placementPrompt">Click to place, Right click to cancel</div>
+  <!-- ✅ Prompts -->
+  <div id="craftingPrompt" style="display: none;">Press E to Craft</div>
+  <div id="placementPrompt" style="display: none;">Left click to place, right click to cancel</div>
 
-  <!-- Toolbar -->
-  <div id="toolbar">
-    <div class="slot">1</div>
-    <div class="slot">2</div>
-    <div class="slot">3</div>
-    <div class="slot">4</div>
-    <div class="slot">5</div>
-    <div class="slot">6</div>
-    <div class="slot">7</div>
-    <div class="slot">8</div>
-    <div class="slot">9</div>
-    <div class="slot">0</div>
-    <div class="slot">-</div>
-    <div class="slot">=</div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+  <!-- ✅ Scripts -->
   <script src="draggable.js"></script>
   <script src="main.js"></script>
+
 </body>
 </html>

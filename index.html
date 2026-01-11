@@ -8,65 +8,48 @@
     body {
       margin: 0;
       overflow: hidden;
+      font-family: sans-serif;
     }
 
     canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 0;
       display: block;
     }
 
-    #inventoryUI {
+    #inventoryUI, #craftingPrompt, #placementPrompt {
       position: absolute;
-      top: 20px;
-      left: 20px;
-      font-family: sans-serif;
-      font-size: 18px;
-      color: white;
-      background: rgba(0, 0, 0, 0.5);
+      top: 10px;
+      left: 10px;
       padding: 8px 12px;
-      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      font-size: 14px;
       z-index: 10;
-      pointer-events: none;
+      border-radius: 4px;
     }
 
     #craftingPrompt, #placementPrompt {
-      position: absolute;
+      top: auto;
       bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: sans-serif;
-      font-size: 16px;
-      color: white;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 6px 10px;
-      border-radius: 4px;
-      display: none;
-      z-index: 10;
-      pointer-events: none;
     }
 
-    #craftingMenu {
+    #craftingMenu, #buildingMenu, #inventoryMenu {
       position: absolute;
       top: 100px;
       left: 50%;
       transform: translateX(-50%);
-      font-family: sans-serif;
-      font-size: 18px;
-      color: white;
-      background: rgba(0, 0, 0, 0.9);
-      padding: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 12px;
+      border: 1px solid #444;
       border-radius: 6px;
-      display: none;
       z-index: 20;
-      width: 300px;
-      text-align: center;
-      pointer-events: auto;
+      display: none;
+      color: #fff;
+      width: 200px;
     }
 
-    #craftingHeader {
+    #craftingHeader,
+    #buildingHeader,
+    #inventoryHeader {
       cursor: move;
       user-select: none;
       font-weight: bold;
@@ -76,78 +59,9 @@
       border-radius: 4px;
     }
 
-    .craft-btn {
-      display: block;
-      margin: 10px auto;
-      padding: 8px 14px;
-      background-color: #444;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .craft-btn:hover {
-      background-color: #666;
-    }
-
-    #craftingMessage {
-      margin-top: 10px;
-      font-size: 16px;
-      color: #ff9999;
-    }
-
-    /* === BUILDING MENU === */
-    #buildingMenu {
-      position: absolute;
-      top: 150px;
-      right: 40px;
-      width: 180px;
-      padding: 10px;
-      background-color: rgba(0, 0, 0, 0.85);
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      display: none;
-      z-index: 30;
-      font-family: sans-serif;
-      color: white;
-    }
-
-    .build-item {
-      background: #333;
-      color: white;
-      margin: 5px 0;
-      padding: 6px;
-      border: 1px solid #666;
-      border-radius: 4px;
-      cursor: pointer;
-      text-align: center;
-    }
-
-    .build-item:hover {
-      background: #555;
-    }
-
-    /* === INVENTORY MENU === */
-    #inventoryMenu {
-      position: absolute;
-      top: 150px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 300px;
-      background: rgba(0, 0, 0, 0.85);
-      border-radius: 10px;
-      padding: 20px;
-      display: none;
-      z-index: 30;
-      font-family: sans-serif;
-      color: white;
-    }
-
-    /* === TOOLBAR / HOTBAR === */
     #hotbar {
       position: absolute;
-      bottom: 10px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -158,48 +72,68 @@
     .hotbar-slot {
       width: 40px;
       height: 40px;
-      background-color: rgba(0, 0, 0, 0.6);
-      border: 1px solid white;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: sans-serif;
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid #888;
+      border-radius: 4px;
+      color: #fff;
+      text-align: center;
+      line-height: 40px;
+      font-weight: bold;
       font-size: 14px;
-      color: white;
     }
+
+    ul {
+      padding-left: 16px;
+    }
+
+    button {
+      margin: 3px 0;
+      padding: 6px;
+      width: 100%;
+      border: none;
+      border-radius: 4px;
+      background: #333;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #444;
+    }
+
   </style>
 </head>
 <body>
+
   <canvas id="gameCanvas"></canvas>
 
   <div id="inventoryUI">Wood: 0</div>
-  <div id="craftingPrompt">Press E to open crafting menu</div>
-  <div id="placementPrompt">Building Mode: Left-click to place, Right-click to cancel</div>
+  <div id="craftingPrompt" style="display:none;">Press [E] to open Crafting</div>
+  <div id="placementPrompt" style="display:none;">Left click to place, Right click to cancel</div>
 
-  <!-- Crafting -->
+  <!-- Crafting Menu -->
   <div id="craftingMenu">
-    <div id="craftingHeader">Crafting Menu</div>
-    <button class="craft-btn" onclick="craftItem('Torch', 1)">Craft Torch (1 Wood)</button>
-    <button class="craft-btn" onclick="craftItem('Wall', 3)">Craft Wall (3 Wood)</button>
-    <button class="craft-btn" onclick="craftItem('Pickaxe', 5)">Craft Pickaxe (5 Wood)</button>
-    <p id="craftingMessage"></p>
-    <button class="craft-btn" onclick="closeCraftingMenu()">Close</button>
+    <div id="craftingHeader">Crafting</div>
+    <button onclick="craftItem('Torch', 2)">Craft Torch (2 wood)</button>
+    <button onclick="craftItem('Workbench', 4)">Craft Workbench (4 wood)</button>
+    <button onclick="craftItem('Wall', 3)">Craft Wall (3 wood)</button>
+    <div id="craftingMessage" style="margin-top:10px;"></div>
   </div>
 
   <!-- Building Menu -->
   <div id="buildingMenu">
-    <div class="build-item" onclick="startBuilding('Wall')">Wall</div>
-    <div class="build-item" onclick="startBuilding('Workbench')">Workbench</div>
+    <div id="buildingHeader">Building Menu</div>
+    <button onclick="startBuilding('Wall')">Place Wall</button>
+    <button onclick="startBuilding('Workbench')">Place Workbench</button>
   </div>
 
   <!-- Inventory Menu -->
   <div id="inventoryMenu">
-    <h3>Inventory</h3>
+    <div id="inventoryHeader">Inventory</div>
     <ul id="inventoryList"></ul>
   </div>
 
-  <!-- Toolbar -->
+  <!-- Hotbar -->
   <div id="hotbar">
     <div class="hotbar-slot">1</div>
     <div class="hotbar-slot">2</div>
@@ -215,9 +149,10 @@
     <div class="hotbar-slot">=</div>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/controls/OrbitControls.js"></script>
   <script src="main.js"></script>
   <script src="draggable.js"></script>
+
 </body>
 </html>

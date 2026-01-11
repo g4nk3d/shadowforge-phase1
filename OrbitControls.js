@@ -3,6 +3,8 @@
 // This file is adapted from the official Three.js examples
 // https://github.com/mrdoob/three.js/blob/dev/examples/js/controls/OrbitControls.js
 
+const THREE = window.THREE;
+
 function OrbitControls(object, domElement) {
   this.object = object;
   this.domElement = domElement || document;
@@ -56,3 +58,4 @@ function OrbitControls(object, domElement) {
   // https://raw.githubusercontent.com/mrdoob/three.js/r154/examples/js/controls/OrbitControls.js
   // And copy/paste it into this file in full.
 }
+

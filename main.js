@@ -54,7 +54,7 @@ player.position.set(0, 1, 0);
 scene.add(player);
 
 // ===============================
-// INTERACTABLE TREE (RESOURCE NODE)
+// INTERACTABLE TREE
 // ===============================
 const treeGeometry = new THREE.CylinderGeometry(0.5, 0.8, 5, 8);
 const treeMaterial = new THREE.MeshStandardMaterial({ color: 0x228b22 });
@@ -88,7 +88,7 @@ function handlePlayerMovement() {
 }
 
 // ===============================
-// CAMERA FOLLOW (GAME-STYLE)
+// CAMERA FOLLOW (GAME STYLE)
 // ===============================
 function updateCameraFollow() {
   const offset = new THREE.Vector3(0, 5, 10);
@@ -111,21 +111,6 @@ function checkInteraction() {
 }
 
 // ===============================
-// ORBIT CONTROLS (REDUCED SENSITIVITY)
-// ===============================
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.enableKeys = false;
-controls.rotateSpeed = 0.3;
-controls.zoomSpeed = 0.4;
-controls.panSpeed = 0.3;
-controls.maxPolarAngle = Math.PI / 2;
-
-// Optional: disable right-click pan
-controls.mouseButtons.RIGHT = null;
-
-// ===============================
 // ANIMATION LOOP
 // ===============================
 function animate() {
@@ -134,7 +119,6 @@ function animate() {
   handlePlayerMovement();
   checkInteraction();
   updateCameraFollow();
-  controls.update();
 
   renderer.render(scene, camera);
 }

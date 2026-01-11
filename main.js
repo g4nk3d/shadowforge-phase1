@@ -197,7 +197,6 @@ const inventoryMenu = document.getElementById("inventoryMenu");
 const craftingPrompt = document.getElementById("craftingPrompt");
 const placementPrompt = document.getElementById("placementPrompt");
 const craftingMessage = document.getElementById("craftingMessage");
-
 // ==========================
 // CRAFTING
 // ==========================
@@ -206,9 +205,17 @@ function craftItem(item, cost) {
     craftingMessage.textContent = "Not enough wood";
     return;
   }
+
   woodCount -= cost;
   inventory.push(item);
+
+  // ✅ AUTO-PLACE FIRST TOOL IN SLOT 1
+  if (!toolbarSlots[0]) {
+    toolbarSlots[0] = item;
+  }
+
   updateUI();
+  updateEquippedVisual();
   craftingMessage.textContent = `${item} crafted`;
 }
 

@@ -1,31 +1,29 @@
-function makeDraggable(headerId, containerId) {
+function makeDraggable(headerId, windowId) {
   const header = document.getElementById(headerId);
-  const container = document.getElementById(containerId);
-  let offsetX = 0, offsetY = 0, isDragging = false;
+  const windowEl = document.getElementById(windowId);
 
-  header.addEventListener('mousedown', function (e) {
-    isDragging = true;
-    offsetX = e.clientX - container.offsetLeft;
-    offsetY = e.clientY - container.offsetTop;
-    document.addEventListener('mousemove', dragMouseMove);
-    document.addEventListener('mouseup', stopDragging);
+  if (!header || !windowEl) return; // Avoid crashing if elements aren't found
+
+  let offsetX = 0, offsetY = 0;
+  let dragging = false;
+
+  header.addEventListener("mousedown", e => {
+    dragging = true;
+    offsetX = e.clientX - windowEl.offsetLeft;
+    offsetY = e.clientY - windowEl.offsetTop;
   });
 
-  function dragMouseMove(e) {
-    if (!isDragging) return;
-    container.style.left = (e.clientX - offsetX) + 'px';
-    container.style.top = (e.clientY - offsetY) + 'px';
-    container.style.transform = 'none'; // Disable center translation
-  }
-
-  function stopDragging() {
-    isDragging = false;
-    document.removeEventListener('mousemove', dragMouseMove);
-    document.removeEventListener('mouseup', stopDragging);
-  }
+  window.addEventListener("mouseup", () => dragging = false);
+  window.addEventListener("mousemove", e => {
+    if (!dragging) return;
+    windowEl.style.left = (e.clientX - offsetX) + "px";
+    windowEl.style.top = (e.clientY - offsetY) + "px";
+  });
 }
 
-// Activate drag on menus
-makeDraggable('craftingHeader', 'craftingMenu');
-makeDraggable('buildingHeader', 'buildingMenu');
-makeDraggable('inventoryHeader', 'inventoryMenu');
+// ✅ Make draggable windows after DOM is loaded
+window.addEventListener("DOMContentLoaded", () => {
+  makeDraggable("craftingHeader", "craftingMenu");
+  makeDraggable("buildingHeader", "buildingMenu");
+  makeDraggable("inventoryHeader", "inventoryMenu");
+});

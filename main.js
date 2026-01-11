@@ -7,6 +7,7 @@ camera.position.set(0, 5, 10);
 
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gameCanvas'), antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -17,6 +18,7 @@ window.addEventListener('resize', () => {
 // === LIGHTING ===
 const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
 scene.add(ambientLight);
+
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
 directionalLight.position.set(5, 10, 7);
 scene.add(directionalLight);
@@ -24,7 +26,7 @@ scene.add(directionalLight);
 // === GROUND ===
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshStandardMaterial({ color: 0x228B22 })
+  new THREE.MeshStandardMaterial({ color: 0x228B22 }) // Grass green
 );
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
@@ -43,7 +45,7 @@ const inventory = [];
 
 function updateUI() {
   const ui = document.getElementById("inventoryUI");
-  if (ui) ui.textContent = `Wood: ${woodCount}`;
+  if (ui) ui.textContent = `Wood: ${woodCount} | Inventory: ${inventory.join(", ") || "Empty"}`;
 }
 
 // === TREES ===
@@ -91,6 +93,7 @@ scene.add(workbench);
 // === CRAFTING UI ===
 let nearWorkbench = false;
 const craftingPrompt = document.getElementById("craftingPrompt");
+const placementPrompt = document.getElementById("placementPrompt");
 const craftingMenu = document.getElementById("craftingMenu");
 const craftingMessage = document.getElementById("craftingMessage");
 
@@ -101,12 +104,6 @@ function closeCraftingMenu() {
   if (craftingMenu) craftingMenu.style.display = "none";
   if (craftingMessage) craftingMessage.textContent = "";
 }
-
-window.addEventListener("keydown", (e) => {
-  if (e.key.toLowerCase() === "e" && nearWorkbench) {
-    openCraftingMenu();
-  }
-});
 
 // === CRAFTING LOGIC ===
 function craftItem(item, cost) {
@@ -121,7 +118,6 @@ function craftItem(item, cost) {
     craftingMessage.style.color = "#ff9999";
   }
 }
-
 // === INPUT HANDLING ===
 const keys = {};
 let isLeftMouseDown = false;
@@ -190,7 +186,6 @@ function willCollide(nextPos) {
     new THREE.Vector3(nextPos.x, nextPos.y + 1, nextPos.z),
     new THREE.Vector3(1, 2, 1)
   );
-
   for (const solidBox of solidBoxes) {
     if (solidBox && playerBox.intersectsBox(solidBox)) {
       return true;
@@ -271,6 +266,95 @@ function checkWorkbenchProximity() {
   }
 }
 
+// === PLACEMENT SYSTEM ===
+let placementMode = false;
+let placementGhost = null;
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+function createWallGhost() {
+  const geometry = new THREE.BoxGeometry(2, 2, 0.5);
+  const material = new THREE.MeshStandardMaterial({ color: 0xffffff, opacity: 0.5, transparent: true });
+  return new THREE.Mesh(geometry, material);
+}
+
+function enterPlacementMode() {
+  if (!inventory.includes("Wall")) return;
+
+  placementMode = true;
+  placementPrompt.style.display = "block";
+
+  placementGhost = createWallGhost();
+  scene.add(placementGhost);
+}
+
+function exitPlacementMode() {
+  placementMode = false;
+  placementPrompt.style.display = "none";
+  if (placementGhost) {
+    scene.remove(placementGhost);
+    placementGhost = null;
+  }
+}
+
+function placeWallAt(position) {
+  const wall = new THREE.Mesh(
+    new THREE.BoxGeometry(2, 2, 0.5),
+    new THREE.MeshStandardMaterial({ color: 0x888888 })
+  );
+  wall.position.copy(position);
+  scene.add(wall);
+
+  const box = new THREE.Box3().setFromObject(wall);
+  solidBoxes.push(box);
+
+  // Remove 1 Wall from inventory
+  const index = inventory.indexOf("Wall");
+  if (index !== -1) {
+    inventory.splice(index, 1);
+    updateUI();
+  }
+}
+
+function handlePlacement() {
+  if (!placementMode || !placementGhost) return;
+
+  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+  const intersects = raycaster.intersectObject(ground);
+
+  if (intersects.length > 0) {
+    const point = intersects[0].point;
+    const gridX = Math.round(point.x / 2) * 2;
+    const gridZ = Math.round(point.z / 2) * 2;
+
+    placementGhost.position.set(gridX, 1, gridZ);
+
+    if (isLeftMouseDown) {
+      placeWallAt(new THREE.Vector3(gridX, 1, gridZ));
+      exitPlacementMode();
+    }
+  }
+
+  if (isRightMouseDown || keys["escape"]) {
+    exitPlacementMode();
+  }
+}
+
+// === PLACEMENT KEYBIND ===
+window.addEventListener("keydown", (e) => {
+  if (e.key.toLowerCase() === "e" && nearWorkbench) {
+    openCraftingMenu();
+  }
+
+  if (e.key.toLowerCase() === "p" && !placementMode && inventory.includes("Wall")) {
+    enterPlacementMode();
+  }
+
+  if (e.key === "Escape") {
+    exitPlacementMode();
+  }
+});
+
 // === ANIMATION LOOP ===
 let lastTime = performance.now();
 function animate() {
@@ -284,6 +368,7 @@ function animate() {
   handleTreeInteraction(delta);
   updateCamera();
   checkWorkbenchProximity();
+  handlePlacement();
 
   for (const tree of trees) {
     if (!tree.destroyed) {
@@ -296,31 +381,3 @@ function animate() {
 
 updateUI();
 animate();
-
-// === DRAGGING CRAFTING MENU ===
-const dragTarget = document.getElementById("craftingMenu");
-const dragHeader = document.getElementById("craftingHeader");
-
-let isDragging = false;
-let offsetX = 0;
-let offsetY = 0;
-
-dragHeader.addEventListener("mousedown", (e) => {
-  isDragging = true;
-  offsetX = e.clientX - dragTarget.offsetLeft;
-  offsetY = e.clientY - dragTarget.offsetTop;
-  document.body.style.userSelect = "none";
-});
-
-document.addEventListener("mouseup", () => {
-  isDragging = false;
-  document.body.style.userSelect = "auto";
-});
-
-document.addEventListener("mousemove", (e) => {
-  if (isDragging) {
-    dragTarget.style.left = e.clientX - offsetX + "px";
-    dragTarget.style.top = e.clientY - offsetY + "px";
-    dragTarget.style.transform = "none";
-  }
-});

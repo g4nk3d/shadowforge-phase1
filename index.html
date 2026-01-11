@@ -10,16 +10,12 @@
   <div id="ui">
     <h1>Shadowforge: Defenders of Mordor</h1>
   </div>
-<!-- Load THREE.js -->
-<script src="https://unpkg.com/three@0.154.0/build/three.min.js"></script>
 
-<!-- Load OrbitControls globally -->
-<script src="https://unpkg.com/three@0.154.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- No canvas needed in HTML — Three.js will create it -->
 
-<!-- Load your game script LAST -->
-<script src="main.js"></script>
+  <!-- Load scripts in the correct order -->
+  <script src="three.min.js"></script>
+  <script src="OrbitControls.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
-
-
-

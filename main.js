@@ -5,11 +5,9 @@ scene.background = new THREE.Color(0x222222); // or try 0x111111
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 camera.position.set(0, 10, 20);
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+document.body.appendChild(renderer.domElement); //
 
 // === LIGHTING ===
 const light = new THREE.DirectionalLight(0xffaa88, 1);
@@ -57,6 +55,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
+
 
 
 

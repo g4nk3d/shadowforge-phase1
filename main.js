@@ -12,6 +12,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// Handle resizing
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -37,7 +38,7 @@ const player = new THREE.Mesh(playerGeometry, playerMaterial);
 player.position.set(0, 1, 0);
 scene.add(player);
 
-// Track keys
+// Key tracking
 const keys = {};
 window.addEventListener('keydown', (e) => {
   keys[e.key.toLowerCase()] = true;
@@ -46,26 +47,16 @@ window.addEventListener('keyup', (e) => {
   keys[e.key.toLowerCase()] = false;
 });
 
-// Disable OrbitControls keyboard input
-const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.screenSpacePanning = false;
-controls.minDistance = 5;
-controls.maxDistance = 50;
-controls.maxPolarAngle = Math.PI / 2;
-controls.enableKeys = false; // 👈 disables arrow key control
-
+// Movement logic
 function handlePlayerMovement() {
   const speed = 0.1;
-
   if (keys['w']) player.position.z -= speed;
   if (keys['s']) player.position.z += speed;
   if (keys['a']) player.position.x -= speed;
   if (keys['d']) player.position.x += speed;
 }
 
-// Keep camera behind player (optional)
+// Camera follow (tight behind-player view)
 function updateCameraFollow() {
   const offset = new THREE.Vector3(0, 5, 10);
   const targetPosition = player.position.clone().add(offset);
@@ -73,14 +64,30 @@ function updateCameraFollow() {
   camera.lookAt(player.position);
 }
 
-// Render loop
+// OrbitControls (optional but refined)
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.enableKeys = false;
+controls.screenSpacePanning = false;
+controls.minDistance = 5;
+controls.maxDistance = 50;
+controls.maxPolarAngle = Math.PI / 2;
+
+// ✅ Reduce camera sensitivity
+controls.rotateSpeed = 0.3;   // Default was 1.0
+controls.zoomSpeed = 0.5;     // Default was 1.0
+controls.panSpeed = 0.3;      // Default was 1.0
+
+// Optional: disable right-click panning (comment out if you want to keep it)
+controls.mouseButtons.RIGHT = null;
+
+// Animation loop
 function animate() {
   requestAnimationFrame(animate);
-
   handlePlayerMovement();
   updateCameraFollow();
   controls.update();
-
   renderer.render(scene, camera);
 }
 

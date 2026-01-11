@@ -106,7 +106,7 @@ function createTree(x, z) {
 [[5, 0], [-5, 5], [8, -3], [-8, -6], [0, -8]].forEach(p => createTree(p[0], p[1]));
 
 // ==========================
-// TREE CHOPPING (FIXED)
+// TREE CHOPPING
 // ==========================
 let canChop = true;
 const CHOP_COOLDOWN = 600;
@@ -204,15 +204,23 @@ let mouseDY = 0;
 window.addEventListener("keydown", e => {
   keys[e.key.toLowerCase()] = true;
 
-  if (e.key === "b") buildingMenu.style.display =
-    buildingMenu.style.display === "none" ? "block" : "none";
+  if (e.key === "b") {
+    buildingMenu.style.display =
+      buildingMenu.style.display === "none" ? "block" : "none";
+  }
 
-  if (e.key === "i") inventoryMenu.style.display =
-    inventoryMenu.style.display === "none" ? "block" : "none";
+  if (e.key === "i") {
+    inventoryMenu.style.display =
+      inventoryMenu.style.display === "none" ? "block" : "none";
+  }
 
-  if (e.key === "e" && nearWorkbench) craftingMenu.style.display = "block";
+  if (e.key === "e" && nearWorkbench) {
+    craftingMenu.style.display = "block";
+  }
 
-  if (e.key === "Escape") exitPlacementMode();
+  if (e.key === "Escape") {
+    exitPlacementMode();
+  }
 });
 
 window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
@@ -220,7 +228,7 @@ window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 window.addEventListener("mousedown", e => {
   if (e.button === 0) {
     leftMouse = true;
-    tryChopTree(); // ✅ FIX
+    tryChopTree();
   }
   if (e.button === 2) rightMouse = true;
 });
@@ -236,6 +244,11 @@ window.addEventListener("mousemove", e => {
 });
 
 window.addEventListener("contextmenu", e => e.preventDefault());
+
+window.addEventListener("wheel", e => {
+  camDistance += e.deltaY * 0.01;
+  camDistance = Math.max(4, Math.min(20, camDistance));
+});
 
 // ==========================
 // CAMERA
@@ -264,7 +277,7 @@ function updateCamera() {
 }
 
 // ==========================
-// MOVEMENT + COLLISION
+// COLLISION + MOVEMENT
 // ==========================
 function willCollide(nextPos) {
   const box = new THREE.Box3().setFromCenterAndSize(
@@ -347,13 +360,21 @@ function handlePlacement() {
 }
 
 // ==========================
-// WORKBENCH CHECK
+// WORKBENCH PROXIMITY
 // ==========================
 let nearWorkbench = false;
 
 function checkWorkbenchProximity() {
   nearWorkbench = player.position.distanceTo(workbench.position) <= 2.5;
   craftingPrompt.style.display = nearWorkbench ? "block" : "none";
+}
+
+// ==========================
+// UI CLOSE BUTTON SUPPORT
+// ==========================
+function closeUI(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "none";
 }
 
 // ==========================
@@ -375,11 +396,6 @@ function animate() {
 
   renderer.render(scene, camera);
 }
-function closeUI(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = "none";
-}
 
 updateUI();
 animate();
-

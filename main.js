@@ -1,8 +1,6 @@
-// ===============================
-// SETUP
-// ===============================
+// === SCENE SETUP ===
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb); // Light sky blue
+scene.background = new THREE.Color(0x87ceeb); // Sky blue
 
 const camera = new THREE.PerspectiveCamera(
   75,
@@ -22,30 +20,24 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// ===============================
-// LIGHTING FIXED
-// ===============================
-const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-dirLight.position.set(5, 10, 5);
-scene.add(dirLight);
+// === LIGHTING ===
+const ambientLight = new THREE.AmbientLight(0x404040, 1.5); // Soft white light
+scene.add(ambientLight);
 
-const ambient = new THREE.AmbientLight(0x888888);
-scene.add(ambient);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+directionalLight.position.set(5, 10, 7);
+scene.add(directionalLight);
 
-// ===============================
-// GROUND FIXED
-// ===============================
+// === GROUND ===
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshStandardMaterial({ color: 0x556b2f })
+  new THREE.MeshStandardMaterial({ color: 0x228B22 }) // Forest green
 );
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
 
-// ===============================
-// PLAYER
-// ===============================
+// === PLAYER ===
 const player = new THREE.Mesh(
   new THREE.BoxGeometry(1, 2, 1),
   new THREE.MeshStandardMaterial({ color: 0x8888ff })
@@ -53,63 +45,55 @@ const player = new THREE.Mesh(
 player.position.set(0, 1, 0);
 scene.add(player);
 
-// ===============================
-// INVENTORY UI
-// ===============================
+// === UI ===
 let woodCount = 0;
 function updateUI() {
   const ui = document.getElementById("inventoryUI");
   if (ui) ui.textContent = `Wood: ${woodCount}`;
 }
 
-// ===============================
-// TREES + COLLISION BOXES
-// ===============================
+// === TREES + COLLISION ===
 const trees = [];
 const solidBoxes = [];
 
 function createTree(x, z) {
   const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.5, 0.6, 5, 8),
-    new THREE.MeshStandardMaterial({ color: 0x228b22 })
+    new THREE.CylinderGeometry(0.4, 0.5, 4, 8),
+    new THREE.MeshStandardMaterial({ color: 0x8B4513 }) // Brown
   );
-  trunk.position.set(x, 2.5, z);
+  trunk.position.set(x, 2, z);
   scene.add(trunk);
 
-  const bbox = new THREE.Box3().setFromObject(trunk);
+  const box = new THREE.Box3().setFromObject(trunk);
 
   const tree = {
     mesh: trunk,
-    box: bbox,
+    box: box,
     health: 5,
     destroyed: false,
     respawnTimer: 0
   };
 
   trees.push(tree);
-  solidBoxes.push(bbox);
-  return tree;
+  solidBoxes.push(box);
 }
 
 function spawnTrees() {
   const positions = [
     [5, 0],
     [-5, 5],
-    [10, -4],
-    [-8, -3],
+    [8, -3],
+    [-8, -6],
     [0, -8]
   ];
-
   positions.forEach(([x, z]) => createTree(x, z));
 }
 
 spawnTrees();
-// ===============================
-// INPUT CONTROLS
-// ===============================
+// === INPUT ===
 const keys = {};
-let isRightMouseDown = false;
 let isLeftMouseDown = false;
+let isRightMouseDown = false;
 let mouseDX = 0;
 let mouseDY = 0;
 
@@ -120,7 +104,6 @@ window.addEventListener("mousedown", e => {
   if (e.button === 0) isLeftMouseDown = true;
   if (e.button === 2) isRightMouseDown = true;
 });
-
 window.addEventListener("mouseup", e => {
   if (e.button === 0) isLeftMouseDown = false;
   if (e.button === 2) isRightMouseDown = false;
@@ -135,22 +118,19 @@ window.addEventListener("mousemove", e => {
 
 window.addEventListener("contextmenu", e => e.preventDefault());
 
-// ===============================
-// CAMERA
-// ===============================
-let camYaw = 0;
-let camPitch = 0.3;
-let camDistance = 10;
-
-const MIN_ZOOM = 4;
-const MAX_ZOOM = 20;
-const MIN_PITCH = 0.1;
-const MAX_PITCH = Math.PI / 2 - 0.2;
-
 window.addEventListener("wheel", e => {
   camDistance += e.deltaY * 0.01;
   camDistance = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camDistance));
 });
+
+// === CAMERA ===
+let camYaw = 0;
+let camPitch = 0.3;
+let camDistance = 10;
+const MIN_ZOOM = 4;
+const MAX_ZOOM = 20;
+const MIN_PITCH = 0.1;
+const MAX_PITCH = Math.PI / 2 - 0.2;
 
 function updateCamera() {
   if (isLeftMouseDown || isRightMouseDown) {
@@ -174,9 +154,7 @@ function updateCamera() {
   }
 }
 
-// ===============================
-// COLLISION CHECK (Box vs Box)
-// ===============================
+// === COLLISION ===
 function willCollide(nextPos) {
   const playerBox = new THREE.Box3().setFromCenterAndSize(
     new THREE.Vector3(nextPos.x, nextPos.y + 1, nextPos.z),
@@ -192,9 +170,7 @@ function willCollide(nextPos) {
   return false;
 }
 
-// ===============================
-// MOVEMENT
-// ===============================
+// === MOVEMENT ===
 function handleMovement() {
   const speed = 0.1;
   const dir = new THREE.Vector3();
@@ -215,9 +191,7 @@ function handleMovement() {
   }
 }
 
-// ===============================
-// TREE CHOPPING + RESPAWN
-// ===============================
+// === TREE INTERACTION ===
 let canChop = true;
 const CHOP_COOLDOWN = 1000;
 
@@ -229,7 +203,7 @@ function handleTreeInteraction(delta) {
         tree.destroyed = false;
         tree.health = 5;
         tree.mesh.visible = true;
-        tree.box.setFromObject(tree.mesh); // Rebuild bounding box
+        tree.box.setFromObject(tree.mesh);
         if (!solidBoxes.includes(tree.box)) {
           solidBoxes.push(tree.box);
         }
@@ -263,9 +237,7 @@ function handleTreeInteraction(delta) {
   }
 }
 
-// ===============================
-// MAIN LOOP
-// ===============================
+// === MAIN LOOP ===
 let lastTime = performance.now();
 
 function animate() {
@@ -279,7 +251,7 @@ function animate() {
   handleTreeInteraction(delta);
   updateCamera();
 
-  // Update bounding boxes of visible trees
+  // Update tree bounding boxes
   for (const tree of trees) {
     if (!tree.destroyed) {
       tree.box.setFromObject(tree.mesh);

@@ -49,7 +49,30 @@ player.position.set(0, 1, 0);
 scene.add(player);
 
 // ==========================
-// UI + INVENTORY
+// EQUIPPED ITEM VISUAL
+// ==========================
+let equippedSlot = null;
+let equippedItem = null;
+let equippedMesh = null;
+
+function updateEquippedVisual() {
+  if (equippedMesh) {
+    player.remove(equippedMesh);
+    equippedMesh = null;
+  }
+
+  if (equippedItem) {
+    // Simple placeholder visual
+    equippedMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2, 0.8, 0.2),
+      new THREE.MeshStandardMaterial({ color: 0xffff00 })
+    );
+    equippedMesh.position.set(0.5, 0.5, 0); // Side of player hand
+    player.add(equippedMesh);
+  }
+}
+// ==========================
+// INVENTORY + UI
 // ==========================
 let woodCount = 0;
 const inventory = [];
@@ -73,7 +96,7 @@ function updateUI() {
 }
 
 // ==========================
-// COLLISION STORAGE
+// COLLISION BOXES
 // ==========================
 const solidBoxes = [];
 
@@ -105,18 +128,14 @@ function createTree(x, z) {
 
 [[5, 0], [-5, 5], [8, -3], [-8, -6], [0, -8]].forEach(p => createTree(p[0], p[1]));
 
-// ==========================
-// TREE CHOPPING
-// ==========================
 let canChop = true;
 const CHOP_COOLDOWN = 600;
 
 function tryChopTree() {
-  if (!canChop) return;
+  if (!canChop || !equippedItem || equippedItem !== "Axe") return;
 
   for (const tree of trees) {
     if (tree.destroyed) continue;
-
     const dist = player.position.distanceTo(tree.mesh.position);
     if (dist <= 2.5) {
       tree.health--;
@@ -177,9 +196,14 @@ const inventoryMenu = document.getElementById("inventoryMenu");
 const craftingPrompt = document.getElementById("craftingPrompt");
 const placementPrompt = document.getElementById("placementPrompt");
 const craftingMessage = document.getElementById("craftingMessage");
+// ==========================
+// EQUIP SYSTEM VARIABLES
+// ==========================
+let equippedItem = null;
+let toolbarSlots = new Array(12).fill(null); // 1 through =
 
 // ==========================
-// CRAFTING
+// CRAFTING LOGIC
 // ==========================
 function craftItem(item, cost) {
   if (woodCount < cost) {
@@ -193,7 +217,7 @@ function craftItem(item, cost) {
 }
 
 // ==========================
-// INPUT
+// INPUT HANDLING
 // ==========================
 const keys = {};
 let leftMouse = false;
@@ -201,31 +225,37 @@ let rightMouse = false;
 let mouseDX = 0;
 let mouseDY = 0;
 
-window.addEventListener("keydown", e => {
+window.addEventListener("keydown", (e) => {
   keys[e.key.toLowerCase()] = true;
 
-  if (e.key === "b") {
-    buildingMenu.style.display =
-      buildingMenu.style.display === "none" ? "block" : "none";
-  }
+  if (e.key === "b") buildingMenu.style.display =
+    buildingMenu.style.display === "none" ? "block" : "none";
 
-  if (e.key === "i") {
-    inventoryMenu.style.display =
-      inventoryMenu.style.display === "none" ? "block" : "none";
-  }
+  if (e.key === "i") inventoryMenu.style.display =
+    inventoryMenu.style.display === "none" ? "block" : "none";
 
-  if (e.key === "e" && nearWorkbench) {
-    craftingMenu.style.display = "block";
-  }
+  if (e.key === "e" && nearWorkbench) craftingMenu.style.display = "block";
 
-  if (e.key === "Escape") {
-    exitPlacementMode();
+  if (e.key === "Escape") exitPlacementMode();
+
+  // Equip keys: 1-9, 0, -, =
+  const equipKeys = {
+    "1": 0, "2": 1, "3": 2, "4": 3, "5": 4,
+    "6": 5, "7": 6, "8": 7, "9": 8, "0": 9,
+    "-": 10, "=": 11
+  };
+  const slotIndex = equipKeys[e.key];
+  if (slotIndex !== undefined) {
+    equippedItem = toolbarSlots[slotIndex];
+    updateEquippedVisual();
   }
 });
 
-window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+window.addEventListener("keyup", (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
 
-window.addEventListener("mousedown", e => {
+window.addEventListener("mousedown", (e) => {
   if (e.button === 0) {
     leftMouse = true;
     tryChopTree();
@@ -233,19 +263,19 @@ window.addEventListener("mousedown", e => {
   if (e.button === 2) rightMouse = true;
 });
 
-window.addEventListener("mouseup", e => {
+window.addEventListener("mouseup", (e) => {
   if (e.button === 0) leftMouse = false;
   if (e.button === 2) rightMouse = false;
 });
 
-window.addEventListener("mousemove", e => {
+window.addEventListener("mousemove", (e) => {
   mouseDX = e.movementX;
   mouseDY = e.movementY;
 });
 
-window.addEventListener("contextmenu", e => e.preventDefault());
+window.addEventListener("contextmenu", (e) => e.preventDefault());
 
-window.addEventListener("wheel", e => {
+window.addEventListener("wheel", (e) => {
   camDistance += e.deltaY * 0.01;
   camDistance = Math.max(4, Math.min(20, camDistance));
 });
@@ -277,7 +307,7 @@ function updateCamera() {
 }
 
 // ==========================
-// COLLISION + MOVEMENT
+// MOVEMENT + COLLISION
 // ==========================
 function willCollide(nextPos) {
   const box = new THREE.Box3().setFromCenterAndSize(
@@ -302,7 +332,6 @@ function handleMovement() {
   const next = player.position.clone().add(dir.multiplyScalar(speed));
   if (!willCollide(next)) player.position.copy(next);
 }
-
 // ==========================
 // BUILDING SYSTEM
 // ==========================
@@ -360,6 +389,23 @@ function handlePlacement() {
 }
 
 // ==========================
+// TOOLBAR VISUAL UPDATE
+// ==========================
+function updateEquippedVisual() {
+  for (let i = 0; i < 12; i++) {
+    const slot = document.getElementById(`slot${i + 1}`);
+    if (!slot) continue;
+    if (toolbarSlots[i]) {
+      slot.textContent = toolbarSlots[i];
+      slot.style.backgroundColor = equippedItem === toolbarSlots[i] ? "#aaaaff" : "#dddddd";
+    } else {
+      slot.textContent = "";
+      slot.style.backgroundColor = "#eeeeee";
+    }
+  }
+}
+
+// ==========================
 // WORKBENCH PROXIMITY
 // ==========================
 let nearWorkbench = false;
@@ -370,15 +416,7 @@ function checkWorkbenchProximity() {
 }
 
 // ==========================
-// UI CLOSE BUTTON SUPPORT
-// ==========================
-function closeUI(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = "none";
-}
-
-// ==========================
-// LOOP
+// ANIMATION LOOP
 // ==========================
 let lastTime = performance.now();
 function animate() {
@@ -397,5 +435,17 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+// ==========================
+// CLOSE UI HELPER
+// ==========================
+function closeUI(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "none";
+}
+
+// ==========================
+// INITIALIZE
+// ==========================
 updateUI();
+updateEquippedVisual();
 animate();

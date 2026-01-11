@@ -43,6 +43,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 1, 0);
 controls.update();
 
+
 // === RESIZE HANDLER ===
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -56,6 +57,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
+
 
 
 

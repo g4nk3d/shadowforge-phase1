@@ -123,7 +123,9 @@ function handleTreeInteraction(delta) {
     }
 
     const dist = player.position.distanceTo(tree.mesh.position);
-    if (dist <= 2.5 && canChop) {
+    
+    // ✅ Only chop when close AND holding left mouse click
+    if (dist <= 2.5 && isLeftMouseDown && canChop) {
       tree.health--;
       canChop = false;
 
@@ -145,6 +147,7 @@ function handleTreeInteraction(delta) {
     }
   }
 }
+
 
 // === WORKBENCH ===
 const workbench = new THREE.Mesh(
@@ -395,3 +398,4 @@ function animate() {
 // === INITIALIZE ===
 updateUI();
 animate();
+

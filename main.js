@@ -49,7 +49,7 @@ player.position.set(0, 1, 0);
 scene.add(player);
 
 // ===============================
-// INVENTORY
+// INVENTORY UI
 // ===============================
 let woodCount = 0;
 function updateUI() {
@@ -58,9 +58,10 @@ function updateUI() {
 }
 
 // ===============================
-// TREES + COLLISION
+// TREES + SOLID OBJECTS LIST
 // ===============================
 const trees = [];
+const solidObjects = []; // All collidable objects go here
 
 function createTree(x, z) {
   const mesh = new THREE.Mesh(
@@ -70,13 +71,16 @@ function createTree(x, z) {
   mesh.position.set(x, 2.5, z);
   scene.add(mesh);
 
-  return {
+  const treeData = {
     mesh,
     position: new THREE.Vector3(x, 2.5, z),
     health: 5,
     destroyed: false,
     respawnTimer: 0
   };
+
+  trees.push(treeData);
+  solidObjects.push(mesh); // Mark this mesh as solid
 }
 
 function spawnTrees() {
@@ -89,7 +93,7 @@ function spawnTrees() {
   ];
 
   for (const [x, z] of positions) {
-    trees.push(createTree(x, z));
+    createTree(x, z);
   }
 }
 
@@ -166,22 +170,108 @@ function updateCamera() {
 }
 
 // ===============================
-// MOVEMENT + COLLISION CHECK
+// COLLISION CHECK
 // ===============================
 function checkCollision(nextPos) {
-  const radius = 1;
+  const playerRadius = 0.75;
 
-  for (const tree of trees) {
-    if (tree.destroyed) continue;
-    const dist = tree.mesh.position.distanceTo(nextPos);
-    if (dist < radius + 0.75) {
-      return true; // Collides with tree
+  for (const obj of solidObjects) {
+    if (!obj.visible) continue; // Ignore disabled or removed objects
+
+    const dist = obj.position.distanceTo(nextPos);
+    const objRadius = 0.75;
+
+    if (dist < playerRadius + objRadius) {
+      return true;
     }
   }
 
   return false;
 }
 
+// ===============================
+// MOVEMENT WITH COLLISION
+// ===============================
 function handleMovement() {
   const speed = 0.1;
   const dir = new THREE.Vector3();
+
+  if (keys["w"]) dir.z -= 1;
+  if (keys["s"]) dir.z += 1;
+  if (keys["a"]) dir.x -= 1;
+  if (keys["d"]) dir.x += 1;
+
+  if (dir.length() === 0) return;
+
+  dir.normalize();
+  const move = dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+
+  const nextPos = player.position.clone().add(move.clone().multiplyScalar(speed));
+  if (!checkCollision(nextPos)) {
+    player.position.copy(nextPos);
+  }
+}
+
+// ===============================
+// TREE INTERACTION
+// ===============================
+let canChop = true;
+const CHOP_COOLDOWN = 1000;
+
+function handleTreeInteraction(delta) {
+  for (const tree of trees) {
+    if (tree.destroyed) {
+      tree.respawnTimer -= delta;
+      if (tree.respawnTimer <= 0) {
+        tree.destroyed = false;
+        tree.health = 5;
+        tree.mesh.visible = true;
+        solidObjects.push(tree.mesh); // Add back to collision list
+        console.log("🌱 Tree respawned");
+      }
+      continue;
+    }
+
+    const dist = player.position.distanceTo(tree.mesh.position);
+    if (dist <= 2.5 && canChop) {
+      tree.health--;
+      canChop = false;
+
+      console.log(`🪓 Tree hit! HP: ${tree.health}`);
+
+      if (tree.health <= 0) {
+        tree.destroyed = true;
+        tree.respawnTimer = 20;
+        tree.mesh.visible = false;
+        solidObjects.splice(solidObjects.indexOf(tree.mesh), 1); // Remove from collision list
+        woodCount++;
+        updateUI();
+        console.log("🌲 Tree destroyed! +1 Wood");
+      }
+
+      setTimeout(() => canChop = true, CHOP_COOLDOWN);
+    }
+  }
+}
+
+// ===============================
+// MAIN LOOP
+// ===============================
+let lastTime = performance.now();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const now = performance.now();
+  const delta = (now - lastTime) / 1000;
+  lastTime = now;
+
+  handleMovement();
+  handleTreeInteraction(delta);
+  updateCamera();
+
+  renderer.render(scene, camera);
+}
+
+updateUI();
+animate();

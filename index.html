@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Shadowforge</title>
   <style>
     body {
@@ -68,10 +68,10 @@
 
     #craftingHeader {
       cursor: move;
+      user-select: none;
       font-weight: bold;
       margin-bottom: 10px;
-      user-select: none;
-      background-color: rgba(255,255,255,0.05);
+      background-color: rgba(255, 255, 255, 0.05);
       padding: 5px;
       border-radius: 4px;
     }
@@ -113,40 +113,9 @@
     <button class="craft-btn" onclick="closeCraftingMenu()">Close</button>
   </div>
 
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
   <script src="main.js"></script>
-
-  <script>
-    // === DRAG LOGIC (Separate and DOM-Ready) ===
-    window.addEventListener('DOMContentLoaded', () => {
-      const dragTarget = document.getElementById("craftingMenu");
-      const dragHeader = document.getElementById("craftingHeader");
-
-      let isDragging = false;
-      let offsetX = 0;
-      let offsetY = 0;
-
-      dragHeader.addEventListener("mousedown", (e) => {
-        e.preventDefault(); // prevent canvas grabbing
-        isDragging = true;
-        offsetX = e.clientX - dragTarget.offsetLeft;
-        offsetY = e.clientY - dragTarget.offsetTop;
-        document.body.style.userSelect = "none";
-      });
-
-      document.addEventListener("mouseup", () => {
-        isDragging = false;
-        document.body.style.userSelect = "auto";
-      });
-
-      document.addEventListener("mousemove", (e) => {
-        if (isDragging) {
-          dragTarget.style.left = `${e.clientX - offsetX}px`;
-          dragTarget.style.top = `${e.clientY - offsetY}px`;
-          dragTarget.style.transform = "none"; // disables centering
-        }
-      });
-    });
-  </script>
+  <script src="draggable.js"></script>
 </body>
 </html>

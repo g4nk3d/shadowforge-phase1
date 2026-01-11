@@ -94,8 +94,44 @@ window.addEventListener("mousemove", (e) => {
   }
 });
 
-// Prevent context menu on right-click
+// Disable right-click context menu
 window.addEventListener("contextmenu", (e) => e.preventDefault());
+
+// ===============================
+// CAMERA FOLLOW & ROTATION
+// ===============================
+let cameraAngle = 0;
+let cameraZoomDistance = 10;
+const minZoom = 4;
+const maxZoom = 20;
+
+// Scroll wheel zoom
+window.addEventListener("wheel", (event) => {
+  cameraZoomDistance += event.deltaY * 0.01;
+  cameraZoomDistance = Math.max(minZoom, Math.min(maxZoom, cameraZoomDistance));
+});
+
+function updateCameraFollow() {
+  // Rotate camera when mouse is held
+  if (isRightMouseDown || isLeftMouseDown) {
+    cameraAngle -= mouseDeltaX * 0.002;
+  }
+
+  mouseDeltaX = 0;
+
+  const offsetY = 5;
+  const cameraX = player.position.x + cameraZoomDistance * Math.sin(cameraAngle);
+  const cameraZ = player.position.z + cameraZoomDistance * Math.cos(cameraAngle);
+  const cameraY = player.position.y + offsetY;
+
+  camera.position.set(cameraX, cameraY, cameraZ);
+  camera.lookAt(player.position);
+
+  // If left-click held, player turns to face camera
+  if (isLeftMouseDown) {
+    player.rotation.y = cameraAngle;
+  }
+}
 
 // ===============================
 // PLAYER MOVEMENT
@@ -111,42 +147,12 @@ function handlePlayerMovement() {
 
   direction.normalize();
 
-  // Move based on player's rotation
-  const move = direction.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+  const move = direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
   player.position.add(move.multiplyScalar(speed));
 }
 
 // ===============================
-// CAMERA ROTATION AROUND PLAYER
-// ===============================
-let cameraAngle = 0;
-
-function updateCameraFollow() {
-  // Rotate camera around player when mouse is held
-  if (isRightMouseDown || isLeftMouseDown) {
-    cameraAngle -= mouseDeltaX * 0.002; // rotation sensitivity
-  }
-
-  mouseDeltaX = 0; // reset after applying
-
-  const radius = 10;
-  const offsetY = 5;
-
-  const cameraX = player.position.x + radius * Math.sin(cameraAngle);
-  const cameraZ = player.position.z + radius * Math.cos(cameraAngle);
-  const cameraY = player.position.y + offsetY;
-
-  camera.position.set(cameraX, cameraY, cameraZ);
-  camera.lookAt(player.position);
-
-  // If left mouse is held, rotate the player to face camera direction
-  if (isLeftMouseDown) {
-    player.rotation.y = cameraAngle;
-  }
-}
-
-// ===============================
-// INTERACTION LOGIC (TREE)
+// INTERACTION LOGIC
 // ===============================
 function checkInteraction() {
   const distance = player.position.distanceTo(tree.position);

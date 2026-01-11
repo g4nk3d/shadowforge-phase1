@@ -1,13 +1,10 @@
-// === SCENE SETUP ===
+// ==========================
+// SCENE SETUP
+// ==========================
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 5, 10);
 
 const renderer = new THREE.WebGLRenderer({
@@ -23,13 +20,17 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// === LIGHTING ===
+// ==========================
+// LIGHTING
+// ==========================
 scene.add(new THREE.AmbientLight(0x404040, 1.5));
 const light = new THREE.DirectionalLight(0xffffff, 1.2);
 light.position.set(5, 10, 7);
 scene.add(light);
 
-// === GROUND ===
+// ==========================
+// GROUND
+// ==========================
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(100, 100),
   new THREE.MeshStandardMaterial({ color: 0x228B22 })
@@ -37,7 +38,9 @@ const ground = new THREE.Mesh(
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
-// === PLAYER ===
+// ==========================
+// PLAYER
+// ==========================
 const player = new THREE.Mesh(
   new THREE.BoxGeometry(1, 2, 1),
   new THREE.MeshStandardMaterial({ color: 0x8888ff })
@@ -45,7 +48,9 @@ const player = new THREE.Mesh(
 player.position.set(0, 1, 0);
 scene.add(player);
 
-// === UI + INVENTORY ===
+// ==========================
+// UI + INVENTORY
+// ==========================
 let woodCount = 0;
 const inventory = [];
 
@@ -66,10 +71,15 @@ function updateUI() {
     list.appendChild(li);
   }
 }
-// === COLLISION BOXES ===
+
+// ==========================
+// COLLISION STORAGE
+// ==========================
 const solidBoxes = [];
 
-// === TREES SYSTEM ===
+// ==========================
+// TREES
+// ==========================
 const trees = [];
 
 function createTree(x, z) {
@@ -84,7 +94,7 @@ function createTree(x, z) {
 
   trees.push({
     mesh: trunk,
-    box: box,
+    box,
     health: 5,
     destroyed: false,
     respawnTimer: 0
@@ -93,39 +103,22 @@ function createTree(x, z) {
   solidBoxes.push(box);
 }
 
-function spawnTrees() {
-  const positions = [
-    [5, 0], [-5, 5], [8, -3], [-8, -6], [0, -8]
-  ];
-  positions.forEach(([x, z]) => createTree(x, z));
-}
+[[5, 0], [-5, 5], [8, -3], [-8, -6], [0, -8]].forEach(p => createTree(p[0], p[1]));
 
-spawnTrees();
-
-// === TREE CHOPPING SYSTEM ===
+// ==========================
+// TREE CHOPPING (FIXED)
+// ==========================
 let canChop = true;
-const CHOP_COOLDOWN = 1000;
+const CHOP_COOLDOWN = 600;
 
-function handleTreeInteraction(delta) {
+function tryChopTree() {
+  if (!canChop) return;
+
   for (const tree of trees) {
-    if (tree.destroyed) {
-      tree.respawnTimer -= delta;
-      if (tree.respawnTimer <= 0) {
-        tree.destroyed = false;
-        tree.health = 5;
-        tree.mesh.visible = true;
-        tree.box.setFromObject(tree.mesh);
-        if (!solidBoxes.includes(tree.box)) {
-          solidBoxes.push(tree.box);
-        }
-      }
-      continue;
-    }
+    if (tree.destroyed) continue;
 
     const dist = player.position.distanceTo(tree.mesh.position);
-    
-    // ✅ Only chop when close AND holding left mouse click
-    if (dist <= 2.5 && isLeftMouseDown && canChop) {
+    if (dist <= 2.5) {
       tree.health--;
       canChop = false;
 
@@ -134,22 +127,37 @@ function handleTreeInteraction(delta) {
         tree.respawnTimer = 20;
         tree.mesh.visible = false;
 
-        const index = solidBoxes.indexOf(tree.box);
-        if (index !== -1) solidBoxes.splice(index, 1);
+        const i = solidBoxes.indexOf(tree.box);
+        if (i !== -1) solidBoxes.splice(i, 1);
 
         woodCount++;
         updateUI();
       }
 
-      setTimeout(() => {
-        canChop = true;
-      }, CHOP_COOLDOWN);
+      setTimeout(() => canChop = true, CHOP_COOLDOWN);
+      break;
     }
   }
 }
 
+function handleTreeRespawn(delta) {
+  for (const tree of trees) {
+    if (!tree.destroyed) continue;
 
-// === WORKBENCH ===
+    tree.respawnTimer -= delta;
+    if (tree.respawnTimer <= 0) {
+      tree.destroyed = false;
+      tree.health = 5;
+      tree.mesh.visible = true;
+      tree.box.setFromObject(tree.mesh);
+      solidBoxes.push(tree.box);
+    }
+  }
+}
+
+// ==========================
+// WORKBENCH
+// ==========================
 const workbench = new THREE.Mesh(
   new THREE.BoxGeometry(2, 1, 1),
   new THREE.MeshStandardMaterial({ color: 0xffcc66 })
@@ -157,10 +165,12 @@ const workbench = new THREE.Mesh(
 workbench.position.set(0, 0.5, 1);
 scene.add(workbench);
 
-// ✅ Workbench now has collision
 const workbenchBox = new THREE.Box3().setFromObject(workbench);
 solidBoxes.push(workbenchBox);
-// === UI ELEMENTS ===
+
+// ==========================
+// UI ELEMENTS
+// ==========================
 const craftingMenu = document.getElementById("craftingMenu");
 const buildingMenu = document.getElementById("buildingMenu");
 const inventoryMenu = document.getElementById("inventoryMenu");
@@ -168,115 +178,102 @@ const craftingPrompt = document.getElementById("craftingPrompt");
 const placementPrompt = document.getElementById("placementPrompt");
 const craftingMessage = document.getElementById("craftingMessage");
 
-// === CRAFTING LOGIC ===
+// ==========================
+// CRAFTING
+// ==========================
 function craftItem(item, cost) {
-  if (woodCount >= cost) {
-    woodCount -= cost;
-    inventory.push(item);
-    updateUI();
-    craftingMessage.textContent = `${item} crafted!`;
-    craftingMessage.style.color = "#aaffaa";
-  } else {
-    craftingMessage.textContent = `Not enough wood to craft ${item}`;
-    craftingMessage.style.color = "#ff9999";
+  if (woodCount < cost) {
+    craftingMessage.textContent = "Not enough wood";
+    return;
   }
+  woodCount -= cost;
+  inventory.push(item);
+  updateUI();
+  craftingMessage.textContent = `${item} crafted`;
 }
 
-// === INPUT HANDLING ===
+// ==========================
+// INPUT
+// ==========================
 const keys = {};
-let isLeftMouseDown = false;
-let isRightMouseDown = false;
+let leftMouse = false;
+let rightMouse = false;
 let mouseDX = 0;
 let mouseDY = 0;
 
 window.addEventListener("keydown", e => {
   keys[e.key.toLowerCase()] = true;
 
-  if (e.key.toLowerCase() === "e" && nearWorkbench) {
-    craftingMenu.style.display = "block";
-  }
+  if (e.key === "b") buildingMenu.style.display =
+    buildingMenu.style.display === "none" ? "block" : "none";
 
-  if (e.key.toLowerCase() === "b") {
-    buildingMenu.style.display =
-      buildingMenu.style.display === "none" ? "block" : "none";
-  }
+  if (e.key === "i") inventoryMenu.style.display =
+    inventoryMenu.style.display === "none" ? "block" : "none";
 
-  if (e.key.toLowerCase() === "i") {
-    inventoryMenu.style.display =
-      inventoryMenu.style.display === "none" ? "block" : "none";
-  }
+  if (e.key === "e" && nearWorkbench) craftingMenu.style.display = "block";
 
-  if (e.key === "Escape") {
-    exitPlacementMode();
-  }
+  if (e.key === "Escape") exitPlacementMode();
 });
 
-window.addEventListener("keyup", e => {
-  keys[e.key.toLowerCase()] = false;
-});
+window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
 window.addEventListener("mousedown", e => {
-  if (e.button === 0) isLeftMouseDown = true;
-  if (e.button === 2) isRightMouseDown = true;
+  if (e.button === 0) {
+    leftMouse = true;
+    tryChopTree(); // ✅ FIX
+  }
+  if (e.button === 2) rightMouse = true;
 });
 
 window.addEventListener("mouseup", e => {
-  if (e.button === 0) isLeftMouseDown = false;
-  if (e.button === 2) isRightMouseDown = false;
+  if (e.button === 0) leftMouse = false;
+  if (e.button === 2) rightMouse = false;
 });
 
 window.addEventListener("mousemove", e => {
-  if (isLeftMouseDown || isRightMouseDown) {
-    mouseDX = e.movementX;
-    mouseDY = e.movementY;
-  }
+  mouseDX = e.movementX;
+  mouseDY = e.movementY;
 });
 
 window.addEventListener("contextmenu", e => e.preventDefault());
 
-window.addEventListener("wheel", e => {
-  camDistance += e.deltaY * 0.01;
-  camDistance = Math.max(4, Math.min(20, camDistance));
-});
-
-// === CAMERA ===
+// ==========================
+// CAMERA
+// ==========================
 let camYaw = 0;
-let camPitch = 0.3;
+let camPitch = 0.35;
 let camDistance = 10;
 
 function updateCamera() {
-  if (isLeftMouseDown || isRightMouseDown) {
+  if (leftMouse || rightMouse) {
     camYaw -= mouseDX * 0.002;
     camPitch -= mouseDY * 0.002;
     camPitch = Math.max(0.1, Math.min(Math.PI / 2 - 0.2, camPitch));
   }
 
-  mouseDX = 0;
-  mouseDY = 0;
+  mouseDX = mouseDY = 0;
 
-  const x = player.position.x + camDistance * Math.sin(camPitch) * Math.sin(camYaw);
-  const y = player.position.y + camDistance * Math.cos(camPitch);
-  const z = player.position.z + camDistance * Math.sin(camPitch) * Math.cos(camYaw);
+  camera.position.set(
+    player.position.x + camDistance * Math.sin(camPitch) * Math.sin(camYaw),
+    player.position.y + camDistance * Math.cos(camPitch),
+    player.position.z + camDistance * Math.sin(camPitch) * Math.cos(camYaw)
+  );
 
-  camera.position.set(x, y, z);
   camera.lookAt(player.position);
-
-  if (isLeftMouseDown) {
-    player.rotation.y = camYaw;
-  }
+  if (leftMouse) player.rotation.y = camYaw;
 }
 
-// === COLLISION DETECTION ===
+// ==========================
+// MOVEMENT + COLLISION
+// ==========================
 function willCollide(nextPos) {
-  const playerBox = new THREE.Box3().setFromCenterAndSize(
+  const box = new THREE.Box3().setFromCenterAndSize(
     new THREE.Vector3(nextPos.x, nextPos.y + 1, nextPos.z),
     new THREE.Vector3(1, 2, 1)
   );
-
-  return solidBoxes.some(box => box && playerBox.intersectsBox(box));
+  return solidBoxes.some(b => box.intersectsBox(b));
 }
 
-// === MOVEMENT ===
 function handleMovement() {
   const speed = 0.1;
   const dir = new THREE.Vector3();
@@ -286,18 +283,16 @@ function handleMovement() {
   if (keys["a"]) dir.x -= 1;
   if (keys["d"]) dir.x += 1;
 
-  if (dir.length() === 0) return;
+  if (!dir.length()) return;
 
-  dir.normalize();
-  const move = dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
-  const nextPos = player.position.clone().add(move.multiplyScalar(speed));
-
-  if (!willCollide(nextPos)) {
-    player.position.copy(nextPos);
-  }
+  dir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+  const next = player.position.clone().add(dir.multiplyScalar(speed));
+  if (!willCollide(next)) player.position.copy(next);
 }
 
-// === BUILDING SYSTEM ===
+// ==========================
+// BUILDING SYSTEM
+// ==========================
 let placementMode = false;
 let placementGhost = null;
 let placementType = null;
@@ -310,9 +305,10 @@ function startBuilding(type) {
   placementType = type;
   placementPrompt.style.display = "block";
 
-  const geo = new THREE.BoxGeometry(2, 2, 0.5);
-  const mat = new THREE.MeshStandardMaterial({ opacity: 0.5, transparent: true });
-  placementGhost = new THREE.Mesh(geo, mat);
+  placementGhost = new THREE.Mesh(
+    new THREE.BoxGeometry(2, 2, 0.5),
+    new THREE.MeshStandardMaterial({ opacity: 0.5, transparent: true })
+  );
   scene.add(placementGhost);
 }
 
@@ -335,12 +331,9 @@ function handlePlacement() {
     const gz = Math.round(p.z / 2) * 2;
     placementGhost.position.set(gx, 1, gz);
 
-    if (isLeftMouseDown) {
-      const wall = new THREE.Mesh(
-        new THREE.BoxGeometry(2, 2, 0.5),
-        new THREE.MeshStandardMaterial({ color: 0x777777 })
-      );
-      wall.position.set(gx, 1, gz);
+    if (leftMouse) {
+      const wall = placementGhost.clone();
+      wall.material = new THREE.MeshStandardMaterial({ color: 0x777777 });
       scene.add(wall);
 
       solidBoxes.push(new THREE.Box3().setFromObject(wall));
@@ -350,28 +343,23 @@ function handlePlacement() {
     }
   }
 
-  if (isRightMouseDown) {
-    exitPlacementMode();
-  }
+  if (rightMouse) exitPlacementMode();
 }
-// === WORKBENCH PROXIMITY ===
+
+// ==========================
+// WORKBENCH CHECK
+// ==========================
 let nearWorkbench = false;
 
 function checkWorkbenchProximity() {
-  const dist = player.position.distanceTo(workbench.position);
-  nearWorkbench = dist <= 2.5;
-
-  if (craftingPrompt) {
-    craftingPrompt.style.display =
-      nearWorkbench && craftingMenu.style.display === "none"
-        ? "block"
-        : "none";
-  }
+  nearWorkbench = player.position.distanceTo(workbench.position) <= 2.5;
+  craftingPrompt.style.display = nearWorkbench ? "block" : "none";
 }
 
-// === ANIMATION LOOP ===
+// ==========================
+// LOOP
+// ==========================
 let lastTime = performance.now();
-
 function animate() {
   requestAnimationFrame(animate);
 
@@ -382,20 +370,11 @@ function animate() {
   handleMovement();
   updateCamera();
   handlePlacement();
-  handleTreeInteraction(delta);
+  handleTreeRespawn(delta);
   checkWorkbenchProximity();
-
-  // Update tree bounding boxes if not destroyed
-  for (const tree of trees) {
-    if (!tree.destroyed) {
-      tree.box.setFromObject(tree.mesh);
-    }
-  }
 
   renderer.render(scene, camera);
 }
 
-// === INITIALIZE ===
 updateUI();
 animate();
-

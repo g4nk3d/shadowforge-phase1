@@ -10,6 +10,13 @@
       overflow: hidden;
     }
 
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
     #inventoryUI {
       position: absolute;
       top: 20px;
@@ -91,6 +98,8 @@
   </style>
 </head>
 <body>
+  <canvas id="gameCanvas"></canvas>
+
   <div id="inventoryUI">Wood: 0</div>
   <div id="craftingPrompt">Press E to open crafting menu</div>
 
@@ -107,9 +116,10 @@
   <script src="main.js"></script>
 
   <script>
+    // === Drag Support for Crafting Menu ===
     const craftingMenu = document.getElementById("craftingMenu");
     const craftingHeader = document.getElementById("craftingHeader");
-    const rendererCanvas = document.querySelector("canvas");
+    const rendererCanvas = document.getElementById("gameCanvas");
 
     let isDragging = false;
     let offsetX, offsetY;

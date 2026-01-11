@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shadowforge: Crafting Menu</title>
+  <title>Shadowforge</title>
   <style>
     body {
       margin: 0;
@@ -15,6 +15,7 @@
       top: 0;
       left: 0;
       z-index: 0;
+      display: block;
     }
 
     #inventoryUI {
@@ -28,7 +29,6 @@
       padding: 8px 12px;
       border-radius: 4px;
       z-index: 10;
-      pointer-events: none;
     }
 
     #craftingPrompt {
@@ -44,7 +44,6 @@
       border-radius: 4px;
       display: none;
       z-index: 10;
-      pointer-events: none;
     }
 
     #craftingMenu {
@@ -62,16 +61,16 @@
       z-index: 20;
       width: 300px;
       text-align: center;
-      cursor: grab;
-      pointer-events: auto;
     }
 
     #craftingHeader {
-      cursor: grab;
+      cursor: move;
       font-weight: bold;
       margin-bottom: 10px;
       user-select: none;
-      pointer-events: auto;
+      background-color: rgba(255,255,255,0.05);
+      padding: 5px;
+      border-radius: 4px;
     }
 
     .craft-btn {
@@ -83,7 +82,6 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      pointer-events: auto;
     }
 
     .craft-btn:hover {
@@ -104,7 +102,7 @@
   <div id="craftingPrompt">Press E to open crafting menu</div>
 
   <div id="craftingMenu">
-    <div id="craftingHeader"><strong>Crafting Menu</strong></div>
+    <div id="craftingHeader">Crafting Menu</div>
     <button class="craft-btn" onclick="craftItem('Torch', 1)">Craft Torch (1 Wood)</button>
     <button class="craft-btn" onclick="craftItem('Wall', 3)">Craft Wall (3 Wood)</button>
     <button class="craft-btn" onclick="craftItem('Pickaxe', 5)">Craft Pickaxe (5 Wood)</button>
@@ -116,33 +114,31 @@
   <script src="main.js"></script>
 
   <script>
-    // === Drag Support for Crafting Menu ===
-    const craftingMenu = document.getElementById("craftingMenu");
-    const craftingHeader = document.getElementById("craftingHeader");
-    const rendererCanvas = document.getElementById("gameCanvas");
+    // === Drag logic for crafting menu ===
+    const dragTarget = document.getElementById("craftingMenu");
+    const dragHeader = document.getElementById("craftingHeader");
 
     let isDragging = false;
-    let offsetX, offsetY;
+    let offsetX = 0;
+    let offsetY = 0;
 
-    craftingHeader.addEventListener("mousedown", (e) => {
+    dragHeader.addEventListener("mousedown", (e) => {
       isDragging = true;
-      offsetX = e.clientX - craftingMenu.offsetLeft;
-      offsetY = e.clientY - craftingMenu.offsetTop;
+      offsetX = e.clientX - dragTarget.offsetLeft;
+      offsetY = e.clientY - dragTarget.offsetTop;
       document.body.style.userSelect = "none";
-      if (rendererCanvas) rendererCanvas.style.pointerEvents = "none";
     });
 
     document.addEventListener("mouseup", () => {
       isDragging = false;
-      document.body.style.userSelect = "";
-      if (rendererCanvas) rendererCanvas.style.pointerEvents = "auto";
+      document.body.style.userSelect = "auto";
     });
 
     document.addEventListener("mousemove", (e) => {
       if (isDragging) {
-        craftingMenu.style.left = `${e.clientX - offsetX}px`;
-        craftingMenu.style.top = `${e.clientY - offsetY}px`;
-        craftingMenu.style.transform = "none";
+        dragTarget.style.left = e.clientX - offsetX + "px";
+        dragTarget.style.top = e.clientY - offsetY + "px";
+        dragTarget.style.transform = "none"; // disables center alignment when dragging
       }
     });
   </script>

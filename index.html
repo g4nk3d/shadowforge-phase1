@@ -2,60 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Shadowforge Phase 1</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Shadowforge</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
 
-  <!-- Inventory UI -->
-  <div id="inventoryUI">Wood: 0 | Inventory: Empty</div>
+  <!-- Top Left Inventory Display -->
+  <div id="inventoryUI" class="overlay top-left">Wood: 0 | Inventory: Empty</div>
 
   <!-- Crafting Prompt -->
-  <div id="craftingPrompt">Press E to open Crafting</div>
+  <div id="craftingPrompt" class="overlay center" style="display:none;">Press E to Craft</div>
 
   <!-- Placement Prompt -->
-  <div id="placementPrompt">Left click to place, Right click to cancel</div>
+  <div id="placementPrompt" class="overlay center" style="display:none;">Left Click to Place / Right Click to Cancel</div>
 
   <!-- Crafting Menu -->
-  <div id="craftingMenu" class="ui-window">
-    <div id="craftingHeader">Crafting <button onclick="closeUI('craftingMenu')">X</button></div>
-    <button onclick="craftItem('Axe', 3)">Craft Axe (3 Wood)</button><br />
-    <button onclick="craftItem('Wall', 2)">Craft Wall (2 Wood)</button><br />
-    <div id="craftingMessage"></div>
+  <div id="craftingMenu" class="ui-window" style="display:none;">
+    <div id="craftingHeader">Crafting Menu <button onclick="closeUI('craftingMenu')">X</button></div>
+    <p id="craftingMessage"></p>
+    <button onclick="craftItem('Wall', 2)">Wall (2 Wood)</button>
+    <button onclick="craftItem('Axe', 3)">Axe (3 Wood)</button>
   </div>
 
   <!-- Building Menu -->
-  <div id="buildingMenu" class="ui-window">
-    <div id="buildingHeader">Building <button onclick="closeUI('buildingMenu')">X</button></div>
+  <div id="buildingMenu" class="ui-window" style="display:none; top: 100px; right: 10px; left: auto;">
+    <div id="buildingHeader">Building Menu <button onclick="closeUI('buildingMenu')">X</button></div>
     <button onclick="startBuilding('Wall')">Place Wall</button>
   </div>
 
   <!-- Inventory Menu -->
-  <div id="inventoryMenu" class="ui-window">
+  <div id="inventoryMenu" class="ui-window" style="display:none; top: 100px; left: 10px;">
     <div id="inventoryHeader">Inventory <button onclick="closeUI('inventoryMenu')">X</button></div>
     <ul id="inventoryList"></ul>
   </div>
 
   <!-- Toolbar -->
   <div id="toolbar">
-    <div class="toolbar-slot" id="slot1">1</div>
-    <div class="toolbar-slot" id="slot2">2</div>
-    <div class="toolbar-slot" id="slot3">3</div>
-    <div class="toolbar-slot" id="slot4">4</div>
-    <div class="toolbar-slot" id="slot5">5</div>
-    <div class="toolbar-slot" id="slot6">6</div>
-    <div class="toolbar-slot" id="slot7">7</div>
-    <div class="toolbar-slot" id="slot8">8</div>
-    <div class="toolbar-slot" id="slot9">9</div>
-    <div class="toolbar-slot" id="slot10">0</div>
-    <div class="toolbar-slot" id="slot11">-</div>
-    <div class="toolbar-slot" id="slot12">=</div>
+    <div class="toolbar-slot" id="slot1"></div>
+    <div class="toolbar-slot" id="slot2"></div>
+    <div class="toolbar-slot" id="slot3"></div>
+    <div class="toolbar-slot" id="slot4"></div>
+    <div class="toolbar-slot" id="slot5"></div>
+    <div class="toolbar-slot" id="slot6"></div>
+    <div class="toolbar-slot" id="slot7"></div>
+    <div class="toolbar-slot" id="slot8"></div>
+    <div class="toolbar-slot" id="slot9"></div>
+    <div class="toolbar-slot" id="slot10"></div>
+    <div class="toolbar-slot" id="slot11"></div>
+    <div class="toolbar-slot" id="slot12"></div>
   </div>
 
   <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
   <script src="draggable.js"></script>
-  <script src="main.js"></script>
+  <script src="main.js?v=2"></script>
 </body>
 </html>

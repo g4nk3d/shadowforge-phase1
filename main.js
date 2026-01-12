@@ -56,7 +56,6 @@ scene.add(player);
 // INVENTORY & TOOLBAR
 // ==========================
 let woodCount = 0;
-let woodCount = 0;
 const inventory = ["Axe"];
 let toolbarSlots = new Array(12).fill(null);
 toolbarSlots[0] = "Axe";
@@ -490,5 +489,6 @@ function animate() {
 updateUI();
 updateEquippedVisual();
 animate();
+
 
 

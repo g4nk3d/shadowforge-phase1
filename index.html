@@ -4,96 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Shadowforge</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
-
-    canvas {
-      display: block;
-    }
-
-    #inventoryUI {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 14px;
-      z-index: 5;
-    }
-
-    .uiWindow {
-      position: absolute;
-      width: 250px;
-      background: #f4f4f4;
-      border: 1px solid #999;
-      padding: 10px;
-      display: none;
-      z-index: 20;
-    }
-
-    .header {
-      background: #ccc;
-      padding: 4px;
-      cursor: move;
-      font-weight: bold;
-      user-select: none;
-    }
-
-    .closeBtn {
-      float: right;
-      cursor: pointer;
-      color: red;
-    }
-
-    #craftingMenu { top: 100px; left: 50px; }
-    #buildingMenu { top: 100px; right: 50px; }
-    #inventoryMenu { top: 120px; left: 320px; }
-
-    #craftingPrompt, #placementPrompt {
-      position: absolute;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: white;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 6px 12px;
-      border-radius: 4px;
-      display: none;
-      z-index: 10;
-    }
-
-    #toolbar {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 4px;
-      z-index: 10;
-    }
-
-    .toolbar-slot {
-      width: 40px;
-      height: 40px;
-      background: #eeeeee;
-      border: 1px solid #999;
-      text-align: center;
-      line-height: 40px;
-      font-size: 14px;
-      font-weight: bold;
-      user-select: none;
-    }
-
-    ul {
-      padding-left: 20px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
@@ -106,4 +17,41 @@
   <div id="craftingMenu" class="uiWindow">
     <div class="header">Crafting <span class="closeBtn" onclick="closeUI('craftingMenu')">X</span></div>
     <button onclick="craftItem('Axe', 3)">Craft Axe (3 Wood)</button><br/>
-    <button onclick="craftItem('Wall', 2)">Craft Wall (2 Woo
+    <button onclick="craftItem('Wall', 2)">Craft Wall (2 Wood)</button><br/>
+    <div id="craftingMessage"></div>
+  </div>
+
+  <!-- Building Menu -->
+  <div id="buildingMenu" class="uiWindow">
+    <div class="header">Building <span class="closeBtn" onclick="closeUI('buildingMenu')">X</span></div>
+    <button onclick="startBuilding('Wall')">Place Wall</button>
+  </div>
+
+  <!-- Inventory Menu -->
+  <div id="inventoryMenu" class="uiWindow">
+    <div class="header">Inventory <span class="closeBtn" onclick="closeUI('inventoryMenu')">X</span></div>
+    <ul id="inventoryList"></ul>
+  </div>
+
+  <!-- Toolbar -->
+  <div id="toolbar">
+    <div class="toolbar-slot" id="slot1">1</div>
+    <div class="toolbar-slot" id="slot2">2</div>
+    <div class="toolbar-slot" id="slot3">3</div>
+    <div class="toolbar-slot" id="slot4">4</div>
+    <div class="toolbar-slot" id="slot5">5</div>
+    <div class="toolbar-slot" id="slot6">6</div>
+    <div class="toolbar-slot" id="slot7">7</div>
+    <div class="toolbar-slot" id="slot8">8</div>
+    <div class="toolbar-slot" id="slot9">9</div>
+    <div class="toolbar-slot" id="slot10">0</div>
+    <div class="toolbar-slot" id="slot11">-</div>
+    <div class="toolbar-slot" id="slot12">=</div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js"></script>
+  <script src="draggable.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

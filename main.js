@@ -56,12 +56,13 @@ scene.add(player);
 // INVENTORY & TOOLBAR
 // ==========================
 let woodCount = 0;
+let woodCount = 0;
 const inventory = ["Axe"];
-toolbarSlots[0] = "Axe";
-equippedItem = "Axe";
-let equippedItem = null;
-let equippedMesh = null;
 let toolbarSlots = new Array(12).fill(null);
+toolbarSlots[0] = "Axe";
+
+let equippedItem = "Axe";
+let equippedMesh = null;
 
 // ==========================
 // TOOLBAR EQUIPPED ITEM VISUAL
@@ -489,4 +490,5 @@ function animate() {
 updateUI();
 updateEquippedVisual();
 animate();
+
 

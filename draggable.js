@@ -1,34 +1,25 @@
-function makeDraggable(headerId, containerId) {
-  const header = document.querySelector(`#${headerId}`);
-  const container = document.querySelector(`#${containerId}`);
+function makeDraggable(el) {
+  let offsetX = 0, offsetY = 0, isDragging = false;
 
-  if (!header || !container) return;
+  if (!el) return;
 
-  let offsetX = 0, offsetY = 0;
-  let isDragging = false;
-
-  header.addEventListener("mousedown", (e) => {
+  el.addEventListener("mousedown", e => {
     isDragging = true;
-    offsetX = e.clientX - container.offsetLeft;
-    offsetY = e.clientY - container.offsetTop;
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    offsetX = e.clientX - el.offsetLeft;
+    offsetY = e.clientY - el.offsetTop;
   });
 
-  function onMouseMove(e) {
+  document.addEventListener("mousemove", e => {
     if (!isDragging) return;
-    container.style.left = `${e.clientX - offsetX}px`;
-    container.style.top = `${e.clientY - offsetY}px`;
-  }
+    el.style.left = `${e.clientX - offsetX}px`;
+    el.style.top = `${e.clientY - offsetY}px`;
+  });
 
-  function onMouseUp() {
+  document.addEventListener("mouseup", () => {
     isDragging = false;
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
-  }
+  });
 }
 
-// Make all UI windows draggable
-makeDraggable("craftingMenu", "craftingMenu");
-makeDraggable("buildingMenu", "buildingMenu");
-makeDraggable("inventoryMenu", "inventoryMenu");
+makeDraggable(document.getElementById("craftingMenu"));
+makeDraggable(document.getElementById("buildingMenu"));
+makeDraggable(document.getElementById("inventoryMenu"));

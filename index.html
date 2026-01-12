@@ -4,53 +4,48 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Shadowforge</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <canvas id="gameCanvas"></canvas>
-  <div id="inventoryUI">Wood: 0 | Inventory: Empty</div>
 
+  <div id="inventoryUI">Wood: 0 | Inventory: Empty</div>
   <div id="craftingPrompt">Press E to open Crafting</div>
   <div id="placementPrompt">Left click to place, Right click to cancel</div>
 
-  <!-- Crafting Menu -->
-  <div id="craftingMenu" class="uiWindow">
-    <div class="header">Crafting <span class="closeBtn" onclick="closeUI('craftingMenu')">X</span></div>
-    <button onclick="craftItem('Axe', 3)">Craft Axe (3 Wood)</button><br/>
-    <button onclick="craftItem('Wall', 2)">Craft Wall (2 Wood)</button><br/>
+  <div id="craftingMenu" class="menu draggable">
+    <strong>Crafting <button onclick="closeUI('craftingMenu')">X</button></strong><br>
+    <button onclick="craftItem('Axe', 3)">Craft Axe (3 Wood)</button><br>
+    <button onclick="craftItem('Wall', 2)">Craft Wall (2 Wood)</button><br>
     <div id="craftingMessage"></div>
   </div>
 
-  <!-- Building Menu -->
-  <div id="buildingMenu" class="uiWindow">
-    <div class="header">Building <span class="closeBtn" onclick="closeUI('buildingMenu')">X</span></div>
+  <div id="buildingMenu" class="menu draggable">
+    <strong>Building <button onclick="closeUI('buildingMenu')">X</button></strong><br>
     <button onclick="startBuilding('Wall')">Place Wall</button>
   </div>
 
-  <!-- Inventory Menu -->
-  <div id="inventoryMenu" class="uiWindow">
-    <div class="header">Inventory <span class="closeBtn" onclick="closeUI('inventoryMenu')">X</span></div>
+  <div id="inventoryMenu" class="menu draggable">
+    <strong>Inventory <button onclick="closeUI('inventoryMenu')">X</button></strong>
     <ul id="inventoryList"></ul>
   </div>
 
-  <!-- Toolbar -->
   <div id="toolbar">
-    <div class="toolbar-slot" id="slot1">1</div>
-    <div class="toolbar-slot" id="slot2">2</div>
-    <div class="toolbar-slot" id="slot3">3</div>
-    <div class="toolbar-slot" id="slot4">4</div>
-    <div class="toolbar-slot" id="slot5">5</div>
-    <div class="toolbar-slot" id="slot6">6</div>
-    <div class="toolbar-slot" id="slot7">7</div>
-    <div class="toolbar-slot" id="slot8">8</div>
-    <div class="toolbar-slot" id="slot9">9</div>
-    <div class="toolbar-slot" id="slot10">0</div>
-    <div class="toolbar-slot" id="slot11">-</div>
-    <div class="toolbar-slot" id="slot12">=</div>
+    <div class="slot" id="slot1">1</div>
+    <div class="slot" id="slot2">2</div>
+    <div class="slot" id="slot3">3</div>
+    <div class="slot" id="slot4">4</div>
+    <div class="slot" id="slot5">5</div>
+    <div class="slot" id="slot6">6</div>
+    <div class="slot" id="slot7">7</div>
+    <div class="slot" id="slot8">8</div>
+    <div class="slot" id="slot9">9</div>
+    <div class="slot" id="slot10">0</div>
+    <div class="slot" id="slot11">-</div>
+    <div class="slot" id="slot12">=</div>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
   <script src="draggable.js"></script>
   <script src="main.js"></script>
 </body>

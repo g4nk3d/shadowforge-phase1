@@ -2,14 +2,9 @@
 // SCENE SETUP
 // ==========================
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb); // Sky blue
+scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(
-  75,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  1000
-);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 5, 10);
 
 const renderer = new THREE.WebGLRenderer({
@@ -54,15 +49,44 @@ player.position.set(0, 1, 0);
 scene.add(player);
 
 // ==========================
-// TOOLBAR + EQUIPPED ITEM
+// INVENTORY + TOOLBAR
 // ==========================
 let woodCount = 0;
 const inventory = [];
 let equippedItem = null;
 let equippedMesh = null;
 let toolbarSlots = new Array(12).fill(null);
-let equippedSlot = null;
 
+// ==========================
+// UI ELEMENTS
+// ==========================
+const craftingMenu = document.getElementById("craftingMenu");
+const buildingMenu = document.getElementById("buildingMenu");
+const inventoryMenu = document.getElementById("inventoryMenu");
+const craftingPrompt = document.getElementById("craftingPrompt");
+const placementPrompt = document.getElementById("placementPrompt");
+const craftingMessage = document.getElementById("craftingMessage");
+
+// 🔴 FORCE UI HIDDEN ON START
+[craftingMenu, buildingMenu, inventoryMenu, craftingPrompt, placementPrompt]
+  .forEach(el => el && (el.style.display = "none"));
+
+// ==========================
+// UI HELPERS
+// ==========================
+function toggleMenu(el) {
+  if (!el) return;
+  el.style.display = (el.style.display === "block") ? "none" : "block";
+}
+
+function closeUI(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = "none";
+}
+
+// ==========================
+// EQUIPPED VISUAL
+// ==========================
 function updateEquippedVisual() {
   if (equippedMesh) {
     player.remove(equippedMesh);
@@ -74,7 +98,7 @@ function updateEquippedVisual() {
       new THREE.BoxGeometry(0.2, 0.8, 0.2),
       new THREE.MeshStandardMaterial({ color: 0xffff00 })
     );
-    equippedMesh.position.set(0.5, 0.5, 0); // Simulated hand
+    equippedMesh.position.set(0.5, 0.5, 0);
     player.add(equippedMesh);
   }
 
@@ -88,136 +112,7 @@ function updateEquippedVisual() {
 }
 
 // ==========================
-// UI: Inventory Text + List
-// ==========================
-function updateUI() {
-  const invText = document.getElementById("inventoryUI");
-  if (invText) {
-    invText.textContent =
-      `Wood: ${woodCount} | Inventory: ${inventory.join(", ") || "Empty"}`;
-  }
-
-  const list = document.getElementById("inventoryList");
-  if (list) {
-    list.innerHTML = "";
-    const counts = {};
-    inventory.forEach(i => counts[i] = (counts[i] || 0) + 1);
-    for (const item in counts) {
-      const li = document.createElement("li");
-      li.textContent = `${item} x${counts[item]}`;
-      list.appendChild(li);
-    }
-  }
-}
-// ==========================
-// COLLISION BOXES
-// ==========================
-const solidBoxes = [];
-
-// ==========================
-// TREES
-// ==========================
-const trees = [];
-
-function createTree(x, z) {
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.4, 0.5, 4, 8),
-    new THREE.MeshStandardMaterial({ color: 0x8B4513 })
-  );
-  trunk.position.set(x, 2, z);
-  scene.add(trunk);
-
-  const box = new THREE.Box3().setFromObject(trunk);
-
-  trees.push({
-    mesh: trunk,
-    box,
-    health: 5,
-    destroyed: false,
-    respawnTimer: 0
-  });
-
-  solidBoxes.push(box);
-}
-
-[[5, 0], [-5, 5], [8, -3], [-8, -6], [0, -8]].forEach(p => createTree(p[0], p[1]));
-
-let canChop = true;
-const CHOP_COOLDOWN = 600;
-
-function tryChopTree() {
-  if (!canChop || !equippedItem || equippedItem !== "Axe") return;
-
-  for (const tree of trees) {
-    if (tree.destroyed) continue;
-
-    const dist = player.position.distanceTo(tree.mesh.position);
-    if (dist <= 2.5) {
-      tree.health--;
-      canChop = false;
-
-      if (tree.health <= 0) {
-        tree.destroyed = true;
-        tree.respawnTimer = 20;
-        tree.mesh.visible = false;
-
-        const i = solidBoxes.indexOf(tree.box);
-        if (i !== -1) solidBoxes.splice(i, 1);
-
-        woodCount++;
-        updateUI();
-      }
-
-      setTimeout(() => canChop = true, CHOP_COOLDOWN);
-      break;
-    }
-  }
-}
-
-function handleTreeRespawn(delta) {
-  for (const tree of trees) {
-    if (!tree.destroyed) continue;
-
-    tree.respawnTimer -= delta;
-    if (tree.respawnTimer <= 0) {
-      tree.destroyed = false;
-      tree.health = 5;
-      tree.mesh.visible = true;
-      tree.box.setFromObject(tree.mesh);
-      solidBoxes.push(tree.box);
-    }
-  }
-}
-
-// ==========================
-// WORKBENCH
-// ==========================
-const workbench = new THREE.Mesh(
-  new THREE.BoxGeometry(2, 1, 1),
-  new THREE.MeshStandardMaterial({ color: 0xffcc66 })
-);
-workbench.position.set(0, 0.5, 1);
-scene.add(workbench);
-
-const workbenchBox = new THREE.Box3().setFromObject(workbench);
-solidBoxes.push(workbenchBox);
-
-// ==========================
-// UI ELEMENTS
-// ==========================
-const craftingMenu = document.getElementById("craftingMenu");
-const buildingMenu = document.getElementById("buildingMenu");
-const inventoryMenu = document.getElementById("inventoryMenu");
-const craftingPrompt = document.getElementById("craftingPrompt");
-const placementPrompt = document.getElementById("placementPrompt");
-const craftingMessage = document.getElementById("craftingMessage");
-
-function closeUI(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = "none";
-}
-// ==========================
-// INPUT HANDLING
+// INPUT
 // ==========================
 const keys = {};
 let leftMouse = false;
@@ -226,67 +121,44 @@ let mouseDX = 0;
 let mouseDY = 0;
 
 window.addEventListener("keydown", (e) => {
-  keys[e.key.toLowerCase()] = true;
+  const k = e.key.toLowerCase();
+  keys[k] = true;
 
-  if (e.key === "b") {
-    buildingMenu.style.display = buildingMenu.style.display === "none" ? "block" : "none";
-  }
+  if (k === "b") toggleMenu(buildingMenu);
+  if (k === "i") toggleMenu(inventoryMenu);
+  if (k === "e" && nearWorkbench) toggleMenu(craftingMenu);
+  if (k === "escape") exitPlacementMode();
 
-  if (e.key === "i") {
-    inventoryMenu.style.display = inventoryMenu.style.display === "none" ? "block" : "none";
-  }
-
-  if (e.key === "e" && nearWorkbench) {
-    craftingMenu.style.display = "block";
-  }
-
-  if (e.key === "Escape") {
-    exitPlacementMode();
-  }
-
-  // Equip keys: 1-9, 0, -, =
   const equipKeys = {
     "1": 0, "2": 1, "3": 2, "4": 3, "5": 4,
     "6": 5, "7": 6, "8": 7, "9": 8, "0": 9,
     "-": 10, "=": 11
   };
-  const slotIndex = equipKeys[e.key];
-  if (slotIndex !== undefined) {
-    equippedItem = toolbarSlots[slotIndex];
+
+  if (equipKeys[k] !== undefined) {
+    equippedItem = toolbarSlots[equipKeys[k]];
     updateEquippedVisual();
   }
 });
 
-window.addEventListener("keyup", (e) => {
-  keys[e.key.toLowerCase()] = false;
+window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+window.addEventListener("mousedown", e => {
+  if (e.button === 0) leftMouse = true;
+  if (e.button === 2) rightMouse = true;
 });
 
-window.addEventListener("mousedown", (e) => {
-  if (e.button === 0) {
-    leftMouse = true;
-    tryChopTree();
-  }
-  if (e.button === 2) {
-    rightMouse = true;
-  }
-});
-
-window.addEventListener("mouseup", (e) => {
+window.addEventListener("mouseup", e => {
   if (e.button === 0) leftMouse = false;
   if (e.button === 2) rightMouse = false;
 });
 
-window.addEventListener("mousemove", (e) => {
+window.addEventListener("mousemove", e => {
   mouseDX = e.movementX;
   mouseDY = e.movementY;
 });
 
-window.addEventListener("contextmenu", (e) => e.preventDefault());
-
-window.addEventListener("wheel", (e) => {
-  camDistance += e.deltaY * 0.01;
-  camDistance = Math.max(4, Math.min(20, camDistance));
-});
+window.addEventListener("contextmenu", e => e.preventDefault());
 
 // ==========================
 // CAMERA
@@ -311,167 +183,16 @@ function updateCamera() {
   );
 
   camera.lookAt(player.position);
-  if (leftMouse) player.rotation.y = camYaw;
-}
-
-// ==========================
-// COLLISION DETECTION
-// ==========================
-function willCollide(nextPos) {
-  const box = new THREE.Box3().setFromCenterAndSize(
-    new THREE.Vector3(nextPos.x, nextPos.y + 1, nextPos.z),
-    new THREE.Vector3(1, 2, 1)
-  );
-  return solidBoxes.some(b => box.intersectsBox(b));
-}
-
-// ==========================
-// MOVEMENT
-// ==========================
-function handleMovement() {
-  const speed = 0.1;
-  const dir = new THREE.Vector3();
-
-  if (keys["w"]) dir.z -= 1;
-  if (keys["s"]) dir.z += 1;
-  if (keys["a"]) dir.x -= 1;
-  if (keys["d"]) dir.x += 1;
-
-  if (!dir.length()) return;
-
-  dir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
-  const next = player.position.clone().add(dir.multiplyScalar(speed));
-  if (!willCollide(next)) player.position.copy(next);
-}
-// ==========================
-// BUILDING SYSTEM
-// ==========================
-let placementMode = false;
-let placementGhost = null;
-let placementType = null;
-const raycaster = new THREE.Raycaster();
-
-function startBuilding(type) {
-  if (!inventory.includes(type)) return;
-
-  placementMode = true;
-  placementType = type;
-  placementPrompt.style.display = "block";
-
-  placementGhost = new THREE.Mesh(
-    new THREE.BoxGeometry(2, 2, 0.5),
-    new THREE.MeshStandardMaterial({ opacity: 0.5, transparent: true })
-  );
-  scene.add(placementGhost);
-}
-
-function exitPlacementMode() {
-  placementMode = false;
-  placementPrompt.style.display = "none";
-  if (placementGhost) scene.remove(placementGhost);
-  placementGhost = null;
-}
-
-function handlePlacement() {
-  if (!placementMode || !placementGhost) return;
-
-  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  const hit = raycaster.intersectObject(ground);
-
-  if (hit.length) {
-    const p = hit[0].point;
-    const gx = Math.round(p.x / 2) * 2;
-    const gz = Math.round(p.z / 2) * 2;
-    placementGhost.position.set(gx, 1, gz);
-
-    if (leftMouse) {
-      const wall = placementGhost.clone();
-      wall.material = new THREE.MeshStandardMaterial({ color: 0x777777 });
-      scene.add(wall);
-
-      solidBoxes.push(new THREE.Box3().setFromObject(wall));
-      inventory.splice(inventory.indexOf(placementType), 1);
-      updateUI();
-      exitPlacementMode();
-    }
-  }
-
-  if (rightMouse) exitPlacementMode();
-}
-
-// ==========================
-// TOOLBAR VISUAL UPDATE
-// ==========================
-function updateEquippedVisual() {
-  for (let i = 0; i < 12; i++) {
-    const slot = document.getElementById(`slot${i + 1}`);
-    if (!slot) continue;
-    if (toolbarSlots[i]) {
-      slot.textContent = toolbarSlots[i];
-      slot.style.backgroundColor = equippedItem === toolbarSlots[i] ? "#aaaaff" : "#dddddd";
-    } else {
-      slot.textContent = "";
-      slot.style.backgroundColor = "#eeeeee";
-    }
-  }
-
-  // Equipped item visual (held in hand)
-  if (equippedMesh) {
-    player.remove(equippedMesh);
-    equippedMesh = null;
-  }
-
-  if (equippedItem) {
-    equippedMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(0.2, 0.8, 0.2),
-      new THREE.MeshStandardMaterial({ color: 0xffff00 })
-    );
-    equippedMesh.position.set(0.5, 0.5, 0);
-    player.add(equippedMesh);
-  }
-}
-
-// ==========================
-// WORKBENCH PROXIMITY
-// ==========================
-let nearWorkbench = false;
-
-function checkWorkbenchProximity() {
-  nearWorkbench = player.position.distanceTo(workbench.position) <= 2.5;
-  craftingPrompt.style.display = nearWorkbench && craftingMenu.style.display === "none" ? "block" : "none";
 }
 
 // ==========================
 // GAME LOOP
 // ==========================
-let lastTime = performance.now();
 function animate() {
   requestAnimationFrame(animate);
-
-  const now = performance.now();
-  const delta = (now - lastTime) / 1000;
-  lastTime = now;
-
-  handleMovement();
   updateCamera();
-  handlePlacement();
-  handleTreeRespawn(delta);
-  checkWorkbenchProximity();
-
   renderer.render(scene, camera);
 }
 
-// ==========================
-// CLOSE UI HELPER
-// ==========================
-function closeUI(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = "none";
-}
-
-// ==========================
-// INITIALIZE
-// ==========================
-updateUI();
 updateEquippedVisual();
 animate();

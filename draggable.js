@@ -1,35 +1,34 @@
-function makeDraggable(headerId, windowId) {
-  const header = document.getElementById(headerId);
-  const windowEl = document.getElementById(windowId);
+function makeDraggable(headerId, containerId) {
+  const header = document.querySelector(`#${headerId}`);
+  const container = document.querySelector(`#${containerId}`);
 
-  // ✅ HARD SAFETY CHECK — PREVENTS CRASH
-  if (!header || !windowEl) {
-    console.warn(`Draggable skipped: ${headerId} or ${windowId} not found`);
-    return;
-  }
+  if (!header || !container) return;
 
-  let offsetX = 0;
-  let offsetY = 0;
-  let dragging = false;
+  let offsetX = 0, offsetY = 0;
+  let isDragging = false;
 
   header.addEventListener("mousedown", (e) => {
-    dragging = true;
-    offsetX = e.clientX - windowEl.offsetLeft;
-    offsetY = e.clientY - windowEl.offsetTop;
+    isDragging = true;
+    offsetX = e.clientX - container.offsetLeft;
+    offsetY = e.clientY - container.offsetTop;
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
   });
 
-  window.addEventListener("mouseup", () => dragging = false);
+  function onMouseMove(e) {
+    if (!isDragging) return;
+    container.style.left = `${e.clientX - offsetX}px`;
+    container.style.top = `${e.clientY - offsetY}px`;
+  }
 
-  window.addEventListener("mousemove", (e) => {
-    if (!dragging) return;
-    windowEl.style.left = `${e.clientX - offsetX}px`;
-    windowEl.style.top = `${e.clientY - offsetY}px`;
-  });
+  function onMouseUp() {
+    isDragging = false;
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+  }
 }
 
-// ✅ WAIT FOR DOM — CRITICAL
-window.addEventListener("DOMContentLoaded", () => {
-  makeDraggable("craftingHeader", "craftingMenu");
-  makeDraggable("buildingHeader", "buildingMenu");
-  makeDraggable("inventoryHeader", "inventoryMenu");
-});
+// Make all UI windows draggable
+makeDraggable("craftingMenu", "craftingMenu");
+makeDraggable("buildingMenu", "buildingMenu");
+makeDraggable("inventoryMenu", "inventoryMenu");
